@@ -268,12 +268,10 @@ export default function CalculadoraRentabilidad() {
         rentabilidad_anualizada_optimista: toNumber(resultados.rentabilidadAnualizadaOptimista),
       };
 
-      // NO agregar ciudad, barrio, provincia hasta que se ejecute el script SQL
-      // Para evitar errores de "column not found"
-      // Descomentar las siguientes líneas DESPUÉS de ejecutar el script SQL:
-      // if (ciudad && ciudad.trim()) proyectoData.ciudad = ciudad.trim();
-      // if (barrio && barrio.trim()) proyectoData.barrio = barrio.trim();
-      // if (provincia && provincia.trim()) proyectoData.provincia = provincia.trim();
+      // Agregar campos de ubicación
+      if (ciudad && ciudad.trim()) proyectoData.ciudad = ciudad.trim();
+      if (barrio && barrio.trim()) proyectoData.barrio = barrio.trim();
+      if (provincia && provincia.trim()) proyectoData.provincia = provincia.trim();
 
       // Agregar todos los gastos estimados y reales (con toNumber)
       CONCEPTOS_GASTOS.forEach(concepto => {
