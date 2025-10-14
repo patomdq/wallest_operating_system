@@ -121,7 +121,7 @@ export default function Dashboard() {
         </Link>
 
         <Link
-          href="/wallest/simulador"
+          href="/wallest/calculadora"
           className="bg-wos-card border border-wos-border rounded-lg p-6 hover:border-wos-accent transition-smooth"
         >
           <div className="flex items-center gap-4">
@@ -129,8 +129,8 @@ export default function Dashboard() {
               <Calculator size={24} className="text-wos-accent" />
             </div>
             <div>
-              <h3 className="font-semibold text-wos-accent">Simulador de Rentabilidad</h3>
-              <p className="text-sm text-wos-text-muted">Calcular ROI de inversión</p>
+              <h3 className="font-semibold text-wos-accent">Calculadora de Rentabilidad</h3>
+              <p className="text-sm text-wos-text-muted">Evaluar proyectos inmobiliarios</p>
             </div>
           </div>
         </Link>

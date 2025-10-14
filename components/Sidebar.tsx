@@ -48,7 +48,7 @@ const menuItems: MenuItem[] = [
       { title: 'Administración', path: '/wallest/administracion', icon: FileText },
       { title: 'Finanzas', path: '/wallest/finanzas', icon: DollarSign },
       { title: 'Recursos Humanos', path: '/wallest/rrhh', icon: UserCircle },
-      { title: 'Simulador de Rentabilidad', path: '/wallest/simulador', icon: Calculator },
+      { title: 'Calculadora de Rentabilidad', path: '/wallest/calculadora', icon: Calculator },
       { title: 'Gestor de Macroproyectos', path: '/wallest/macroproyectos', icon: FolderKanban },
       { title: 'Documentos', path: '/wallest/documentos', icon: HardDrive },
     ],

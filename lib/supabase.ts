@@ -68,20 +68,62 @@ export type Lead = {
   updated_at?: string;
 };
 
-export type SimulacionRentabilidad = {
+export type ProyectoRentabilidad = {
   id: string;
   nombre: string;
-  precio_compra: number;
-  precio_venta: number;
-  itp_porcentaje: number;
-  notaria: number;
-  registro: number;
-  api_compra: number;
-  reforma: number;
-  costo_total?: number;
-  beneficio?: number;
-  roi_total?: number;
-  roi_anualizado?: number;
+  direccion?: string;
+  ciudad?: string;
+  barrio?: string;
+  provincia?: string;
+  estado: 'borrador' | 'aprobado' | 'descartado' | 'en_marcha' | 'terminado';
+  calificacion?: number;
+  duracion_meses?: number;
+  
+  // Gastos - Estimados
+  precio_compra_estimado?: number;
+  gastos_compraventa_estimado?: number;
+  gastos_cancelacion_estimado?: number;
+  itp_estimado?: number;
+  honorarios_profesionales_estimado?: number;
+  honorarios_complementaria_estimado?: number;
+  certificado_energetico_estimado?: number;
+  comisiones_inmobiliarias_estimado?: number;
+  reforma_estimado?: number;
+  seguros_estimado?: number;
+  suministros_basura_estimado?: number;
+  cuotas_comunidad_estimado?: number;
+  deuda_ibi_estimado?: number;
+  deuda_comunidad_estimado?: number;
+  
+  // Gastos - Reales
+  precio_compra_real?: number;
+  gastos_compraventa_real?: number;
+  gastos_cancelacion_real?: number;
+  itp_real?: number;
+  honorarios_profesionales_real?: number;
+  honorarios_complementaria_real?: number;
+  certificado_energetico_real?: number;
+  comisiones_inmobiliarias_real?: number;
+  reforma_real?: number;
+  seguros_real?: number;
+  suministros_basura_real?: number;
+  cuotas_comunidad_real?: number;
+  deuda_ibi_real?: number;
+  deuda_comunidad_real?: number;
+  
+  // Precios de venta
+  precio_venta_pesimista?: number;
+  precio_venta_realista?: number;
+  precio_venta_optimista?: number;
+  
+  // Resultados calculados
+  rentabilidad_pesimista?: number;
+  rentabilidad_realista?: number;
+  rentabilidad_optimista?: number;
+  rentabilidad_anualizada_pesimista?: number;
+  rentabilidad_anualizada_realista?: number;
+  rentabilidad_anualizada_optimista?: number;
+  
   created_at?: string;
   updated_at?: string;
 };
