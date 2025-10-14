@@ -54,6 +54,9 @@ export default function CalculadoraRentabilidad() {
   const [precioVentaPesimista, setPrecioVentaPesimista] = useState(0);
   const [precioVentaRealista, setPrecioVentaRealista] = useState(0);
   const [precioVentaOptimista, setPrecioVentaOptimista] = useState(0);
+  
+  // Observaciones
+  const [observaciones, setObservaciones] = useState('');
 
   // Resultados calculados
   const [resultados, setResultados] = useState({
@@ -277,6 +280,9 @@ export default function CalculadoraRentabilidad() {
         proyectoData[`${concepto.id}_estimado`] = toNumber(gastos[concepto.id].estimado);
         proyectoData[`${concepto.id}_real`] = toNumber(gastos[concepto.id].real);
       });
+      
+      // Agregar observaciones
+      proyectoData.observaciones = observaciones?.trim() || null;
 
       console.log('Datos a guardar:', proyectoData); // Para debugging
 
@@ -340,6 +346,7 @@ export default function CalculadoraRentabilidad() {
     setPrecioVentaPesimista(0);
     setPrecioVentaRealista(0);
     setPrecioVentaOptimista(0);
+    setObservaciones('');
   };
 
   const handleImprimir = () => {
@@ -371,6 +378,9 @@ export default function CalculadoraRentabilidad() {
       };
     });
     setGastos(nuevosGastos);
+    
+    // Cargar observaciones
+    setObservaciones((proyecto as any).observaciones || '');
 
     // Guardar ID del proyecto en edición
     setProyectoEditando(proyecto.id);
@@ -632,6 +642,19 @@ export default function CalculadoraRentabilidad() {
               </tr>
             </tbody>
           </table>
+        </div>
+        
+        {/* Observaciones */}
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-wos-text-muted mb-2">
+            Observaciones
+          </label>
+          <textarea
+            value={observaciones}
+            onChange={(e) => setObservaciones(e.target.value)}
+            className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-3 text-wos-accent focus:outline-none focus:ring-2 focus:ring-wos-primary resize-y min-h-[100px]"
+            placeholder="Escribe aquí tus observaciones o comentarios generales sobre la operación..."
+          />
         </div>
       </div>
 
