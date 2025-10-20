@@ -55,7 +55,39 @@ export default function PlanificadorPage() {
       .select('*')
       .eq('reforma_id', reformaSeleccionada)
       .order('created_at', { ascending: true });
-    if (data) setPartidas(data);
+    if (data) {
+      setPartidas(data);
+      // Actualizar presupuesto y avance de la reforma
+      await actualizarReforma(data);
+    }
+  };
+
+  const actualizarReforma = async (partidas: PartidaReforma[]) => {
+    // Calcular presupuesto total
+    const presupuestoTotal = partidas.reduce((sum, p) => sum + (p.costo || 0), 0);
+    
+    // Calcular avance (porcentaje de partidas finalizadas)
+    const totalPartidas = partidas.length;
+    const finalizadas = partidas.filter(p => p.estado === 'finalizado').length;
+    const avance = totalPartidas > 0 ? Math.round((finalizadas / totalPartidas) * 100) : 0;
+    
+    // Determinar estado de la reforma
+    let estado = 'pendiente';
+    if (avance === 100) {
+      estado = 'finalizada';
+    } else if (avance > 0) {
+      estado = 'en_proceso';
+    }
+    
+    // Actualizar reforma en la base de datos
+    await supabase
+      .from('reformas')
+      .update({
+        presupuesto_total: presupuestoTotal,
+        avance: avance,
+        estado: estado
+      })
+      .eq('id', reformaSeleccionada);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,8 +113,8 @@ export default function PlanificadorPage() {
     }
 
     resetForm();
-    loadPartidas();
-    loadReformaInfo(); // Recargar info para ver presupuesto actualizado
+    await loadPartidas(); // Esto ya actualiza la reforma
+    await loadReformaInfo(); // Recargar info para mostrar cambios
   };
 
   const resetForm = () => {
@@ -117,8 +149,8 @@ export default function PlanificadorPage() {
   const handleDelete = async (id: string) => {
     if (confirm('¿Seguro que deseas eliminar esta partida?')) {
       await supabase.from('planificacion_reforma').delete().eq('id', id);
-      loadPartidas();
-      loadReformaInfo(); // Recargar info para ver presupuesto actualizado
+      await loadPartidas(); // Esto ya actualiza la reforma
+      await loadReformaInfo(); // Recargar info para mostrar cambios
     }
   };
 
@@ -128,8 +160,8 @@ export default function PlanificadorPage() {
       .update({ estado: nuevoEstado })
       .eq('id', id);
     
-    loadPartidas();
-    loadReformaInfo(); // Recargar para ver avance actualizado
+    await loadPartidas(); // Esto ya actualiza la reforma
+    await loadReformaInfo(); // Recargar para mostrar cambios
   };
 
   // Cálculos
