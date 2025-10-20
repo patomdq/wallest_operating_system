@@ -75,9 +75,12 @@ export type ProyectoRentabilidad = {
   ciudad?: string;
   barrio?: string;
   provincia?: string;
+  tipo_inmueble?: string;
   estado: 'borrador' | 'aprobado' | 'descartado' | 'en_marcha' | 'terminado';
   calificacion?: number;
   duracion_meses?: number;
+  url?: string;
+  observaciones?: string;
   
   // Gastos - Estimados
   precio_compra_estimado?: number;

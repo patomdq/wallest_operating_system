@@ -55,8 +55,10 @@ export default function CalculadoraRentabilidad() {
   const [precioVentaRealista, setPrecioVentaRealista] = useState(0);
   const [precioVentaOptimista, setPrecioVentaOptimista] = useState(0);
   
-  // Observaciones
+  // Observaciones y campos adicionales
   const [observaciones, setObservaciones] = useState('');
+  const [tipoInmueble, setTipoInmueble] = useState('');
+  const [url, setUrl] = useState('');
 
   // Resultados calculados
   const [resultados, setResultados] = useState({
@@ -279,8 +281,10 @@ export default function CalculadoraRentabilidad() {
         proyectoData[`${concepto.id}_real`] = toNumber(gastos[concepto.id].real);
       });
       
-      // Agregar observaciones
+      // Agregar observaciones y campos adicionales
       proyectoData.observaciones = observaciones?.trim() || null;
+      proyectoData.tipo_inmueble = tipoInmueble?.trim() || null;
+      proyectoData.url = url?.trim() || null;
 
       console.log('Datos a guardar:', proyectoData); // Para debugging
 
@@ -345,6 +349,8 @@ export default function CalculadoraRentabilidad() {
     setPrecioVentaRealista(0);
     setPrecioVentaOptimista(0);
     setObservaciones('');
+    setTipoInmueble('');
+    setUrl('');
   };
 
   const handleImprimir = () => {
@@ -377,8 +383,10 @@ export default function CalculadoraRentabilidad() {
     });
     setGastos(nuevosGastos);
     
-    // Cargar observaciones
+    // Cargar observaciones y campos adicionales
     setObservaciones((proyecto as any).observaciones || '');
+    setTipoInmueble((proyecto as any).tipo_inmueble || '');
+    setUrl((proyecto as any).url || '');
 
     // Guardar ID del proyecto en edición
     setProyectoEditando(proyecto.id);
@@ -544,6 +552,31 @@ export default function CalculadoraRentabilidad() {
 
           <div>
             <label className="block text-sm font-medium text-wos-text-muted mb-2">
+              Tipo de Inmueble
+            </label>
+            <select
+              value={tipoInmueble}
+              onChange={(e) => setTipoInmueble(e.target.value)}
+              className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-accent focus:outline-none focus:ring-2 focus:ring-wos-primary"
+            >
+              <option value="">Selecciona un tipo</option>
+              <option value="Piso">Piso</option>
+              <option value="Casa">Casa</option>
+              <option value="Local">Local</option>
+              <option value="Terreno">Terreno</option>
+              <option value="Oficina">Oficina</option>
+              <option value="Edificio">Edificio</option>
+              <option value="Trastero">Trastero</option>
+              <option value="Chalet">Chalet</option>
+              <option value="Adosado">Adosado</option>
+              <option value="Dúplex">Dúplex</option>
+              <option value="Garaje">Garaje</option>
+              <option value="Nave">Nave</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-wos-text-muted mb-2">
               Estado
             </label>
             <select
@@ -642,8 +675,22 @@ export default function CalculadoraRentabilidad() {
           </table>
         </div>
         
-        {/* Observaciones */}
+        {/* URL */}
         <div className="mt-6">
+          <label className="block text-sm font-medium text-wos-text-muted mb-2">
+            URL
+          </label>
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-accent focus:outline-none focus:ring-2 focus:ring-wos-primary"
+            placeholder="https://drive.google.com/... o https://dropbox.com/..."
+          />
+        </div>
+        
+        {/* Observaciones */}
+        <div className="mt-4">
           <label className="block text-sm font-medium text-wos-text-muted mb-2">
             Observaciones
           </label>
