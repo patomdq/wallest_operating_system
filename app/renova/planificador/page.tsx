@@ -4,6 +4,40 @@ import { useEffect, useState } from 'react';
 import { supabase, PartidaReforma } from '@/lib/supabase';
 import { Plus, Trash2, Edit2, Check, Clock, PlayCircle } from 'lucide-react';
 
+import { supabase } from '@/lib/supabaseClient';
+
+// 🔧 Recalcular presupuesto y avance en reformas
+async function actualizarPresupuestoYAvance(reformaId: string) {
+  const { data: partidas, error } = await supabase
+    .from('planificacion_reforma')
+    .select('costo')
+    .eq('reforma_id', reformaId);
+
+  if (error) {
+    console.error('❌ Error obteniendo partidas:', error);
+    return;
+  }
+
+  // Sumar los costos
+  const presupuestoTotal = partidas.reduce((sum, p) => sum + (p.costo || 0), 0);
+
+  // Calcular avance simple (porcentaje de partidas con costo cargado)
+  const partidasConCosto = partidas.filter(p => p.costo > 0).length;
+  const avance = partidas.length > 0 ? Math.round((partidasConCosto / partidas.length) * 100) : 0;
+
+  // Actualizar en la tabla reformas
+  const { error: updateError } = await supabase
+    .from('reformas')
+    .update({
+      presupuesto: presupuestoTotal,
+      avance: avance
+    })
+    .eq('id', reformaId);
+
+  if (updateError) console.error('❌ Error al actualizar reforma:', updateError);
+  else console.log(`✅ Reforma actualizada: ${presupuestoTotal} € | Avance: ${avance}%`);
+}
+
 export default function PlanificadorPage() {
   const [partidas, setPartidas] = useState<PartidaReforma[]>([]);
   const [reformas, setReformas] = useState<any[]>([]);
@@ -111,7 +145,8 @@ export default function PlanificadorPage() {
       // Insertar nueva partida
       await supabase.from('planificacion_reforma').insert([dataToSave]);
     }
-
+      await actualizarPresupuestoYAvance(reformaId);
+    }
     resetForm();
     await loadPartidas(); // Esto ya actualiza la reforma
     await loadReformaInfo(); // Recargar info para mostrar cambios
