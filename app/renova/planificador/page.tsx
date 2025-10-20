@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, PartidaReforma } from '@/lib/supabase';
-import { Plus, Trash2, AlertCircle, Check, Clock, PlayCircle } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, Clock, PlayCircle } from 'lucide-react';
 
 export default function PlanificadorPage() {
   const [partidas, setPartidas] = useState<PartidaReforma[]>([]);
@@ -10,6 +10,7 @@ export default function PlanificadorPage() {
   const [reformaSeleccionada, setReformaSeleccionada] = useState('');
   const [reformaInfo, setReformaInfo] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     partida: '',
     profesional: '',
@@ -71,7 +72,13 @@ export default function PlanificadorPage() {
       estado: formData.estado,
     };
 
-    await supabase.from('planificacion_reforma').insert([dataToSave]);
+    if (editingId) {
+      // Actualizar partida existente
+      await supabase.from('planificacion_reforma').update(dataToSave).eq('id', editingId);
+    } else {
+      // Insertar nueva partida
+      await supabase.from('planificacion_reforma').insert([dataToSave]);
+    }
 
     resetForm();
     loadPartidas();
@@ -89,6 +96,22 @@ export default function PlanificadorPage() {
       estado: 'pendiente',
     });
     setShowForm(false);
+    setEditingId(null);
+  };
+
+  const handleEdit = (partida: PartidaReforma) => {
+    setFormData({
+      partida: partida.partida,
+      profesional: partida.profesional || '',
+      costo: partida.costo?.toString() || '',
+      tiempo_dias: partida.tiempo_dias?.toString() || '',
+      fecha_inicio: partida.fecha_inicio || '',
+      fecha_fin: partida.fecha_fin || '',
+      estado: partida.estado,
+    });
+    setEditingId(partida.id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: string) => {
@@ -176,16 +199,6 @@ export default function PlanificadorPage() {
 
       {reformaSeleccionada && (
         <>
-          {/* Alerta informativa */}
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6 flex items-start gap-3">
-            <AlertCircle size={20} className="text-blue-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-blue-300">
-              <strong>Automatización activa:</strong> El presupuesto total de la reforma se calcula
-              sumando el costo de todas las partidas. El avance se actualiza automáticamente según las
-              partidas finalizadas. Puedes cambiar el estado de cada partida manualmente.
-            </div>
-          </div>
-
           {/* Información de la Reforma */}
           {reformaInfo && (
             <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-6">
@@ -255,7 +268,9 @@ export default function PlanificadorPage() {
           {/* Formulario */}
           {showForm && (
             <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-6 text-wos-accent">Nueva Partida</h2>
+              <h2 className="text-xl font-semibold mb-6 text-wos-accent">
+                {editingId ? 'Editar Partida' : 'Nueva Partida'}
+              </h2>
               <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-wos-text-muted mb-2">Partida *</label>
@@ -424,6 +439,13 @@ export default function PlanificadorPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(p)}
+                            className="p-2 hover:bg-blue-500/20 rounded-lg transition-smooth"
+                            title="Editar"
+                          >
+                            <Edit2 size={18} className="text-blue-400" />
+                          </button>
                           <button
                             onClick={() => handleDelete(p.id)}
                             className="p-2 hover:bg-red-500/20 rounded-lg transition-smooth"

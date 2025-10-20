@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, Reforma } from '@/lib/supabase';
-import { Plus, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ReformasPage() {
   const [reformas, setReformas] = useState<any[]>([]);
   const [inmuebles, setInmuebles] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     inmueble_id: '',
     nombre: '',
@@ -52,7 +53,13 @@ export default function ReformasPage() {
       avance: 0, // Se calculará automáticamente con las partidas
     };
 
-    await supabase.from('reformas').insert([dataToSave]);
+    if (editingId) {
+      // Actualizar reforma existente
+      await supabase.from('reformas').update(dataToSave).eq('id', editingId);
+    } else {
+      // Insertar nueva reforma
+      await supabase.from('reformas').insert([dataToSave]);
+    }
 
     resetForm();
     loadData();
@@ -68,6 +75,21 @@ export default function ReformasPage() {
       estado: 'pendiente',
     });
     setShowForm(false);
+    setEditingId(null);
+  };
+
+  const handleEdit = (reforma: any) => {
+    setFormData({
+      inmueble_id: reforma.inmueble_id,
+      nombre: reforma.nombre,
+      etapa: reforma.etapa || '',
+      fecha_inicio: reforma.fecha_inicio || '',
+      fecha_fin: reforma.fecha_fin || '',
+      estado: reforma.estado,
+    });
+    setEditingId(reforma.id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: string) => {
@@ -115,20 +137,12 @@ export default function ReformasPage() {
         </button>
       </div>
 
-      {/* Alerta informativa */}
-      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6 flex items-start gap-3">
-        <AlertCircle size={20} className="text-blue-400 mt-0.5 flex-shrink-0" />
-        <div className="text-sm text-blue-300">
-          <strong>Automatización activa:</strong> El presupuesto total se calcula sumando el costo de todas las partidas.
-          El avance se calcula según las partidas finalizadas. Cuando todas las partidas estén finalizadas,
-          la reforma se marcará automáticamente como finalizada.
-        </div>
-      </div>
-
       {/* Formulario */}
       {showForm && (
         <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-6 text-wos-accent">Nueva Reforma</h2>
+          <h2 className="text-xl font-semibold mb-6 text-wos-accent">
+            {editingId ? 'Editar Reforma' : 'Nueva Reforma'}
+          </h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Inmueble *</label>
@@ -240,13 +254,22 @@ export default function ReformasPage() {
                   <p className="text-xs text-wos-text-muted mt-1">Etapa: {r.etapa}</p>
                 )}
               </div>
-              <button
-                onClick={() => handleDelete(r.id)}
-                className="p-1 hover:bg-red-500/20 rounded transition-smooth"
-                title="Eliminar reforma"
-              >
-                <Trash2 size={16} className="text-red-500" />
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEdit(r)}
+                  className="p-1 hover:bg-blue-500/20 rounded transition-smooth"
+                  title="Editar reforma"
+                >
+                  <Edit2 size={16} className="text-blue-400" />
+                </button>
+                <button
+                  onClick={() => handleDelete(r.id)}
+                  className="p-1 hover:bg-red-500/20 rounded transition-smooth"
+                  title="Eliminar reforma"
+                >
+                  <Trash2 size={16} className="text-red-500" />
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3 mb-4">
