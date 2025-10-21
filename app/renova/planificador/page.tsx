@@ -248,6 +248,153 @@ export default function PlanificadorPage() {
           )}
         </>
       )}
+{/* Botón Nueva Partida */}
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="flex items-center gap-2 bg-wos-accent text-wos-bg px-4 py-2 rounded-lg hover:opacity-90 transition-smooth"
+            >
+              <Plus size={20} />
+              Nueva Partida
+            </button>
+          </div>
+
+          {/* Formulario */}
+          {showForm && (
+            <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-6 text-wos-accent">
+                {editingId ? 'Editar Partida' : 'Nueva Partida'}
+              </h2>
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-wos-text-muted mb-2">Partida *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.partida}
+                    onChange={(e) => setFormData({ ...formData, partida: e.target.value })}
+                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+                    placeholder="Ej: Fontanería, Electricidad..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-wos-text-muted mb-2">Profesional</label>
+                  <input
+                    type="text"
+                    value={formData.profesional}
+                    onChange={(e) => setFormData({ ...formData, profesional: e.target.value })}
+                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+                    placeholder="Nombre del profesional"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-wos-text-muted mb-2">Costo (€)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.costo}
+                    onChange={(e) => setFormData({ ...formData, costo: e.target.value })}
+                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-wos-text-muted mb-2">Tiempo (días)</label>
+                  <input
+                    type="number"
+                    value={formData.tiempo_dias}
+                    onChange={(e) => setFormData({ ...formData, tiempo_dias: e.target.value })}
+                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+                  />
+                </div>
+
+                <div className="md:col-span-2 flex gap-3">
+                  <button
+                    type="submit"
+                    className="bg-wos-accent text-wos-bg px-6 py-2 rounded-lg hover:opacity-90 transition-smooth"
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="bg-wos-border text-wos-text px-6 py-2 rounded-lg hover:opacity-80 transition-smooth"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Tabla de Partidas */}
+          <div className="bg-wos-card border border-wos-border rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-wos-bg border-b border-wos-border">
+                  <tr>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
+                      Partida
+                    </th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
+                      Profesional
+                    </th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
+                      Costo
+                    </th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
+                      Tiempo
+                    </th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
+                      Estado
+                    </th>
+                    <th className="text-right px-6 py-4 text-sm font-semibold text-wos-text-muted">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {partidas.map((p) => (
+                    <tr key={p.id} className="border-b border-wos-border hover:bg-wos-bg transition-smooth">
+                      <td className="px-6 py-4 text-wos-text font-medium">{p.partida}</td>
+                      <td className="px-6 py-4 text-wos-text-muted">{p.profesional || '-'}</td>
+                      <td className="px-6 py-4 text-wos-text">
+                        €{p.costo?.toLocaleString() || '0'}
+                      </td>
+                      <td className="px-6 py-4 text-wos-text-muted">
+                        {p.tiempo_dias || '0'} días
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-lg text-xs font-medium border ${getEstadoColor(p.estado)}`}>
+                          {p.estado}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => handleEdit(p)} className="text-blue-400 hover:underline mr-3">
+                          Editar
+                        </button>
+                        <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:underline">
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {partidas.length === 0 && (
+                <div className="text-center py-12 text-wos-text-muted">
+                  No hay partidas registradas para esta reforma
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
     </div>
   );
 }
