@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, PartidaReforma } from '@/lib/supabase';
-import { Plus, Trash2, Edit2, Check, Clock, PlayCircle } from 'lucide-react';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
 
 // 🔧 Recalcular presupuesto y avance en reformas
 async function actualizarPresupuestoYAvance(reformaId: string) {
@@ -18,7 +18,7 @@ async function actualizarPresupuestoYAvance(reformaId: string) {
 
   const presupuestoTotal = partidas.reduce((sum, p) => sum + (p.costo || 0), 0);
   const totalPartidas = partidas.length;
-  const finalizadas = partidas.filter(p => p.estado === 'finalizado').length;
+  const finalizadas = partidas.filter((p) => p.estado === 'finalizado').length;
   const avance = totalPartidas > 0 ? Math.round((finalizadas / totalPartidas) * 100) : 0;
 
   let estado = 'pendiente';
@@ -30,7 +30,7 @@ async function actualizarPresupuestoYAvance(reformaId: string) {
     .update({
       presupuesto: presupuestoTotal,
       avance: avance,
-      estado: estado
+      estado: estado,
     })
     .eq('id', reformaId);
 
@@ -162,23 +162,9 @@ export default function PlanificadorPage() {
     }
   };
 
-  const handleCambiarEstado = async (id: string, nuevoEstado: 'pendiente' | 'en_proceso' | 'finalizado') => {
-    await supabase.from('planificacion_reforma').update({ estado: nuevoEstado }).eq('id', id);
-    await actualizarPresupuestoYAvance(reformaSeleccionada);
-    await loadPartidas();
-    await loadReformaInfo();
-  };
-
   const totales = {
     costo: partidas.reduce((sum, p) => sum + (p.costo || 0), 0),
     tiempo: partidas.reduce((sum, p) => sum + (p.tiempo_dias || 0), 0),
-  };
-
-  const estadisticas = {
-    total: partidas.length,
-    pendientes: partidas.filter((p) => p.estado === 'pendiente').length,
-    en_proceso: partidas.filter((p) => p.estado === 'en_proceso').length,
-    finalizadas: partidas.filter((p) => p.estado === 'finalizado').length,
   };
 
   const getEstadoColor = (estado: string) => {
@@ -194,9 +180,12 @@ export default function PlanificadorPage() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-wos-accent mb-2">Planificador de Reformas</h1>
-        <p className="text-wos-text-muted">Gestión de partidas · Cálculo automático de presupuesto y avance</p>
+        <p className="text-wos-text-muted">
+          Gestión de partidas · Cálculo automático de presupuesto y avance
+        </p>
       </div>
 
+      {/* Selector de Reforma */}
       <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-6">
         <label className="block text-sm text-wos-text-muted mb-2">Seleccionar Reforma</label>
         <select
@@ -219,36 +208,33 @@ export default function PlanificadorPage() {
         </div>
       )}
 
-      {reformaSeleccionada && (
+      {reformaSeleccionada && reformaInfo && (
         <>
-          {reformaInfo && (
-            <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold text-wos-accent mb-4">{reformaInfo.nombre}</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <p className="text-xs text-wos-text-muted mb-1">Presupuesto Total</p>
-                  <p className="text-2xl font-bold text-wos-accent">
-                    €{reformaInfo.presupuesto?.toLocaleString() || '0'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-wos-text-muted mb-1">Avance</p>
-                  <p className="text-2xl font-bold text-wos-accent">{reformaInfo.avance || 0}%</p>
-                </div>
-                <div>
-                  <p className="text-xs text-wos-text-muted mb-1">Estado</p>
-                  <p className="text-lg font-semibold text-wos-text capitalize">{reformaInfo.estado}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-wos-text-muted mb-1">Tiempo Total</p>
-                  <p className="text-2xl font-bold text-wos-accent">{totales.tiempo}</p>
-                </div>
+          <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-semibold text-wos-accent mb-4">{reformaInfo.nombre}</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs text-wos-text-muted mb-1">Presupuesto Total</p>
+                <p className="text-2xl font-bold text-wos-accent">
+                  €{reformaInfo.presupuesto?.toLocaleString() || '0'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-wos-text-muted mb-1">Avance</p>
+                <p className="text-2xl font-bold text-wos-accent">{reformaInfo.avance || 0}%</p>
+              </div>
+              <div>
+                <p className="text-xs text-wos-text-muted mb-1">Estado</p>
+                <p className="text-lg font-semibold text-wos-text capitalize">{reformaInfo.estado}</p>
+              </div>
+              <div>
+                <p className="text-xs text-wos-text-muted mb-1">Tiempo Total</p>
+                <p className="text-2xl font-bold text-wos-accent">{totales.tiempo}</p>
               </div>
             </div>
-          )}
-        </>
-      )}
-{/* Botón Nueva Partida */}
+          </div>
+
+          {/* Botón Nueva Partida */}
           <div className="flex justify-end mb-6">
             <button
               onClick={() => setShowForm(!showForm)}
@@ -335,24 +321,12 @@ export default function PlanificadorPage() {
               <table className="w-full">
                 <thead className="bg-wos-bg border-b border-wos-border">
                   <tr>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                      Partida
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                      Profesional
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                      Costo
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                      Tiempo
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                      Estado
-                    </th>
-                    <th className="text-right px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                      Acciones
-                    </th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Partida</th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Profesional</th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Costo</th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Tiempo</th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Estado</th>
+                    <th className="text-right px-6 py-4 text-sm font-semibold text-wos-text-muted">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -360,12 +334,8 @@ export default function PlanificadorPage() {
                     <tr key={p.id} className="border-b border-wos-border hover:bg-wos-bg transition-smooth">
                       <td className="px-6 py-4 text-wos-text font-medium">{p.partida}</td>
                       <td className="px-6 py-4 text-wos-text-muted">{p.profesional || '-'}</td>
-                      <td className="px-6 py-4 text-wos-text">
-                        €{p.costo?.toLocaleString() || '0'}
-                      </td>
-                      <td className="px-6 py-4 text-wos-text-muted">
-                        {p.tiempo_dias || '0'} días
-                      </td>
+                      <td className="px-6 py-4 text-wos-text">€{p.costo?.toLocaleString() || '0'}</td>
+                      <td className="px-6 py-4 text-wos-text-muted">{p.tiempo_dias || '0'} días</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-lg text-xs font-medium border ${getEstadoColor(p.estado)}`}>
                           {p.estado}
@@ -373,10 +343,10 @@ export default function PlanificadorPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button onClick={() => handleEdit(p)} className="text-blue-400 hover:underline mr-3">
-                          Editar
+                          <Edit2 size={16} className="inline-block mr-1" /> Editar
                         </button>
                         <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:underline">
-                          Eliminar
+                          <Trash2 size={16} className="inline-block mr-1" /> Eliminar
                         </button>
                       </td>
                     </tr>
@@ -392,9 +362,6 @@ export default function PlanificadorPage() {
           </div>
         </>
       )}
-    </div>
-  );
-}
     </div>
   );
 }
