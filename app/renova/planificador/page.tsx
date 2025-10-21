@@ -16,21 +16,35 @@ async function actualizarPresupuestoYAvance(reformaId: string) {
     return;
   }
 
-  const presupuestoTotal = (partidas || []).reduce((sum, p) => sum + (p.costo || 0), 0);
-  const totalPartidas = partidas?.length ?? 0;
-  const finalizadas = (partidas || []).filter((p) => p.estado === 'finalizado').length;
+  const presupuestoTotal = partidas.reduce((sum, p) => sum + (p.costo || 0), 0);
+  const totalPartidas = partidas.length;
+  const finalizadas = partidas.filter(p => p.estado === 'finalizado').length;
+  const enProceso = partidas.filter(p => p.estado === 'en_proceso').length;
+
   const avance = totalPartidas > 0 ? Math.round((finalizadas / totalPartidas) * 100) : 0;
 
+  // 🔥 Nuevo cálculo de estado global
   let estado = 'pendiente';
-  if (avance === 100) estado = 'finalizada';
-  else if (avance > 0) estado = 'en_proceso';
+  if (finalizadas === totalPartidas && totalPartidas > 0) {
+    estado = 'finalizada';
+  } else if (enProceso > 0 || finalizadas > 0) {
+    estado = 'en_proceso';
+  }
 
+  // ✅ Actualizar en la tabla reformas
   const { error: updateError } = await supabase
     .from('reformas')
-    .update({ presupuesto: presupuestoTotal, avance, estado })
+    .update({
+      presupuesto: presupuestoTotal,
+      avance,
+      estado
+    })
     .eq('id', reformaId);
 
-  if (updateError) console.error('❌ Error al actualizar reforma:', updateError);
+  if (updateError)
+    console.error('❌ Error al actualizar reforma:', updateError);
+  else
+    console.log(`✅ Reforma actualizada: ${presupuestoTotal} € | Avance: ${avance}% | Estado: ${estado}`);
 }
 
 export default function PlanificadorPage() {
