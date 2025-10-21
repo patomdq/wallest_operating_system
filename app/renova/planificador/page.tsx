@@ -28,7 +28,7 @@ async function actualizarPresupuestoYAvance(reformaId: string) {
   const { error: updateError } = await supabase
     .from('reformas')
     .update({
-      presupuesto_total: presupuestoTotal,
+      presupuesto: presupuestoTotal,
       avance: avance,
       estado: estado
     })
@@ -228,7 +228,7 @@ export default function PlanificadorPage() {
                 <div>
                   <p className="text-xs text-wos-text-muted mb-1">Presupuesto Total</p>
                   <p className="text-2xl font-bold text-wos-accent">
-                    €{reformaInfo.presupuesto_total?.toLocaleString() || '0'}
+                    €{reformaInfo.presupuesto?.toLocaleString() || '0'}
                   </p>
                 </div>
                 <div>
