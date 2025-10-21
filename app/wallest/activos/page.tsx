@@ -32,11 +32,15 @@ export default function ActivosInmobiliarios() {
   }, []);
 
   const loadInmuebles = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('inmuebles')
       .select('*')
       .order('created_at', { ascending: false });
-    if (data) setInmuebles(data);
+    if (error) {
+      console.error('❌ Error cargando inmuebles:', error);
+      return;
+    }
+    setInmuebles(data || []);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,17 +59,21 @@ export default function ActivosInmobiliarios() {
       habitaciones: formData.habitaciones ? parseInt(formData.habitaciones) : null,
       banos: formData.banos ? parseInt(formData.banos) : null,
       descripcion: formData.descripcion || null,
-      estado: formData.estado, // ✅ ESTA LÍNEA ES LA QUE ASEGURA EL GUARDADO CORRECTO
+      estado: formData.estado, // ✅ campo clave
       nota_simple: formData.nota_simple,
       deudas: formData.deudas,
       ocupado: formData.ocupado,
     };
 
+    let error;
     if (editingId) {
-      await supabase.from('inmuebles').update(dataToSave).eq('id', editingId);
+      ({ error } = await supabase.from('inmuebles').update(dataToSave).eq('id', editingId));
     } else {
-      await supabase.from('inmuebles').insert([dataToSave]);
+      ({ error } = await supabase.from('inmuebles').insert([dataToSave]));
     }
+
+    if (error) console.error('❌ Error guardando inmueble:', error);
+    else console.log('✅ Inmueble guardado correctamente');
 
     resetForm();
     loadInmuebles();
@@ -74,7 +82,7 @@ export default function ActivosInmobiliarios() {
   const handleEdit = (inmueble: Inmueble) => {
     setEditingId(inmueble.id);
     setFormData({
-      nombre: inmueble.nombre,
+      nombre: inmueble.nombre || '',
       direccion: inmueble.direccion || '',
       ciudad: inmueble.ciudad || '',
       codigo_postal: inmueble.codigo_postal || '',
@@ -96,7 +104,8 @@ export default function ActivosInmobiliarios() {
 
   const handleDelete = async (id: string) => {
     if (confirm('¿Seguro que deseas eliminar este inmueble?')) {
-      await supabase.from('inmuebles').delete().eq('id', id);
+      const { error } = await supabase.from('inmuebles').delete().eq('id', id);
+      if (error) console.error('❌ Error eliminando inmueble:', error);
       loadInmuebles();
     }
   };
@@ -139,6 +148,7 @@ export default function ActivosInmobiliarios() {
 
   return (
     <div className="p-8">
+      {/* Encabezado */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-wos-accent mb-2">Activos Inmobiliarios</h1>
@@ -153,13 +163,15 @@ export default function ActivosInmobiliarios() {
         </button>
       </div>
 
+      {/* Formulario */}
       {showForm && (
         <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-8">
           <h2 className="text-xl font-semibold mb-6 text-wos-accent">
             {editingId ? 'Editar Inmueble' : 'Nuevo Inmueble'}
           </h2>
+
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            
+            {/* Nombre */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Nombre *</label>
               <input
@@ -171,7 +183,18 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
-            {/* 🔹 Campo Estado */}
+            {/* Ciudad */}
+            <div>
+              <label className="block text-sm text-wos-text-muted mb-2">Ciudad</label>
+              <input
+                type="text"
+                value={formData.ciudad}
+                onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
+                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text"
+              />
+            </div>
+
+            {/* Estado */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Estado</label>
               <select
@@ -185,17 +208,41 @@ export default function ActivosInmobiliarios() {
               </select>
             </div>
 
-            {/* 🔹 Otros campos... */}
+            {/* Precio Compra */}
             <div>
-              <label className="block text-sm text-wos-text-muted mb-2">Ciudad</label>
+              <label className="block text-sm text-wos-text-muted mb-2">Precio Compra (€)</label>
               <input
-                type="text"
-                value={formData.ciudad}
-                onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
+                type="number"
+                step="0.01"
+                value={formData.precio_compra}
+                onChange={(e) => setFormData({ ...formData, precio_compra: e.target.value })}
                 className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text"
               />
             </div>
 
+            {/* Tipo */}
+            <div>
+              <label className="block text-sm text-wos-text-muted mb-2">Tipo</label>
+              <input
+                type="text"
+                value={formData.tipo}
+                onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text"
+              />
+            </div>
+
+            {/* Descripción */}
+            <div className="md:col-span-3">
+              <label className="block text-sm text-wos-text-muted mb-2">Descripción</label>
+              <textarea
+                rows={3}
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text"
+              />
+            </div>
+
+            {/* Botones */}
             <div className="md:col-span-3 flex gap-3 mt-4">
               <button
                 type="submit"
@@ -221,12 +268,12 @@ export default function ActivosInmobiliarios() {
           <table className="w-full">
             <thead className="bg-wos-bg border-b border-wos-border">
               <tr>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Nombre</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Ciudad</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Tipo</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Precio Compra</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Estado</th>
-                <th className="text-right px-6 py-4 text-sm font-semibold text-wos-text-muted">Acciones</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-wos-text-muted">Nombre</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-wos-text-muted">Ciudad</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-wos-text-muted">Tipo</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-wos-text-muted">Precio Compra</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-wos-text-muted">Estado</th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-wos-text-muted">Acciones</th>
               </tr>
             </thead>
             <tbody>
