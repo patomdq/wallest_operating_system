@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, Inmueble } from '@/lib/supabase';
-import { Plus, Edit2, Trash2, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 
 export default function ActivosInmobiliarios() {
   const [inmuebles, setInmuebles] = useState<Inmueble[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+
+  const emptyForm = {
     nombre: '',
     direccion: '',
     ciudad: '',
@@ -25,9 +26,12 @@ export default function ActivosInmobiliarios() {
     nota_simple: false,
     deudas: false,
     ocupado: false,
-  });
+  };
 
-  // ------- Carga inicial -------
+  const [formData, setFormData] = useState({ ...emptyForm });
+
+  // ────────────────────────────────────────────────────────────────────────────────
+  // Cargar datos
   useEffect(() => {
     loadInmuebles();
   }, []);
@@ -38,61 +42,40 @@ export default function ActivosInmobiliarios() {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('❌ Error cargando inmuebles:', error);
-      return;
-    }
-    setInmuebles(data || []);
+    if (!error && data) setInmuebles(data);
   };
 
-  // ------- Helpers de formulario -------
-  const openNewForm = () => {
+  // ────────────────────────────────────────────────────────────────────────────────
+  // Nuevo / Editar / Guardar / Eliminar
+  const newInmueble = () => {
     setEditingId(null);
+    setFormData({ ...emptyForm });
+    setShowForm(true);
+  };
+
+  const handleEdit = (inmueble: Inmueble) => {
+    setEditingId(inmueble.id);
     setFormData({
-      nombre: '',
-      direccion: '',
-      ciudad: '',
-      codigo_postal: '',
-      barrio: '',
-      tipo: '',
-      precio_compra: '',
-      precio_venta: '',
-      superficie: '',
-      habitaciones: '',
-      banos: '',
-      descripcion: '',
-      estado: 'EN_ESTUDIO',
-      nota_simple: false,
-      deudas: false,
-      ocupado: false,
+      nombre: inmueble.nombre || '',
+      direccion: inmueble.direccion || '',
+      ciudad: inmueble.ciudad || '',
+      codigo_postal: inmueble.codigo_postal || '',
+      barrio: inmueble.barrio || '',
+      tipo: inmueble.tipo || '',
+      precio_compra: inmueble.precio_compra?.toString() || '',
+      precio_venta: inmueble.precio_venta?.toString() || '',
+      superficie: inmueble.superficie?.toString() || '',
+      habitaciones: inmueble.habitaciones?.toString() || '',
+      banos: inmueble.banos?.toString() || '',
+      descripcion: inmueble.descripcion || '',
+      estado: (inmueble.estado as any) || 'EN_ESTUDIO',
+      nota_simple: Boolean(inmueble.nota_simple),
+      deudas: Boolean(inmueble.deudas),
+      ocupado: Boolean(inmueble.ocupado),
     });
     setShowForm(true);
   };
 
-  const resetForm = () => {
-    setEditingId(null);
-    setShowForm(false);
-    setFormData({
-      nombre: '',
-      direccion: '',
-      ciudad: '',
-      codigo_postal: '',
-      barrio: '',
-      tipo: '',
-      precio_compra: '',
-      precio_venta: '',
-      superficie: '',
-      habitaciones: '',
-      banos: '',
-      descripcion: '',
-      estado: 'EN_ESTUDIO',
-      nota_simple: false,
-      deudas: false,
-      ocupado: false,
-    });
-  };
-
-  // ------- Crear / Actualizar -------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -109,7 +92,7 @@ export default function ActivosInmobiliarios() {
       habitaciones: formData.habitaciones ? parseInt(formData.habitaciones) : null,
       banos: formData.banos ? parseInt(formData.banos) : null,
       descripcion: formData.descripcion || null,
-      estado: formData.estado,
+      estado: formData.estado as 'EN_ESTUDIO' | 'COMPRADO' | 'VENDIDO',
       nota_simple: formData.nota_simple,
       deudas: formData.deudas,
       ocupado: formData.ocupado,
@@ -121,67 +104,36 @@ export default function ActivosInmobiliarios() {
       await supabase.from('inmuebles').insert([dataToSave]);
     }
 
-    await loadInmuebles();   // ✅ recarga lista
-    resetForm();             // ✅ cierra y limpia
-  };
-
-  // ------- Editar / Eliminar / Marcar comprado -------
-  const handleEdit = (inmueble: Inmueble) => {
-    setEditingId(inmueble.id);
-    setFormData({
-      nombre: inmueble.nombre,
-      direccion: inmueble.direccion || '',
-      ciudad: inmueble.ciudad || '',
-      codigo_postal: inmueble.codigo_postal || '',
-      barrio: inmueble.barrio || '',
-      tipo: inmueble.tipo || '',
-      precio_compra: inmueble.precio_compra?.toString() || '',
-      precio_venta: inmueble.precio_venta?.toString() || '',
-      superficie: inmueble.superficie?.toString() || '',
-      habitaciones: inmueble.habitaciones?.toString() || '',
-      banos: inmueble.banos?.toString() || '',
-      descripcion: inmueble.descripcion || '',
-      estado: inmueble.estado,
-      nota_simple: inmueble.nota_simple || false,
-      deudas: inmueble.deudas || false,
-      ocupado: inmueble.ocupado || false,
-    });
-    setShowForm(true);
+    setEditingId(null);
+    setShowForm(false);
+    setFormData({ ...emptyForm });
+    await loadInmuebles();
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Seguro que deseas eliminar este inmueble?')) return;
-    await supabase.from('inmuebles').delete().eq('id', id);
-    await loadInmuebles();
-  };
-
-  const handleMarcarComprado = async (id: string) => {
-    await supabase
-      .from('inmuebles')
-      .update({ estado: 'COMPRADO', fecha_compra: new Date().toISOString() })
-      .eq('id', id);
-    await loadInmuebles();
-  };
-
-  // (opcional) volver a EN_ESTUDIO desde la tabla
-  const handleMarcarEnEstudio = async (id: string) => {
-    await supabase
-      .from('inmuebles')
-      .update({ estado: 'EN_ESTUDIO' })
-      .eq('id', id);
-    await loadInmuebles();
-  };
-
-  // ------- UI helpers -------
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case 'EN_ESTUDIO': return 'bg-yellow-500/20 text-yellow-500';
-      case 'COMPRADO':   return 'bg-green-500/20 text-green-500';
-      case 'VENDIDO':    return 'bg-blue-500/20 text-blue-500';
-      default:           return 'bg-gray-500/20 text-gray-500';
+    if (confirm('¿Seguro que deseas eliminar este inmueble?')) {
+      await supabase.from('inmuebles').delete().eq('id', id);
+      await loadInmuebles();
     }
   };
 
+  // ────────────────────────────────────────────────────────────────────────────────
+  // UI helpers
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case 'EN_ESTUDIO':
+        return 'bg-yellow-500/20 text-yellow-500';
+      case 'COMPRADO':
+        return 'bg-green-500/20 text-green-500';
+      case 'VENDIDO':
+        return 'bg-blue-500/20 text-blue-500';
+      default:
+        return 'bg-gray-500/20 text-gray-500';
+    }
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────────
+  // Render
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
@@ -190,7 +142,7 @@ export default function ActivosInmobiliarios() {
           <p className="text-wos-text-muted">Gestión completa de propiedades</p>
         </div>
         <button
-          onClick={openNewForm}
+          onClick={newInmueble}
           className="flex items-center gap-2 bg-wos-accent text-wos-bg px-4 py-2 rounded-lg hover:opacity-90 transition-smooth"
         >
           <Plus size={20} />
@@ -198,7 +150,6 @@ export default function ActivosInmobiliarios() {
         </button>
       </div>
 
-      {/* FORMULARIO */}
       {showForm && (
         <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-8">
           <h2 className="text-xl font-semibold mb-6 text-wos-accent">
@@ -206,6 +157,7 @@ export default function ActivosInmobiliarios() {
           </h2>
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Nombre */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Nombre *</label>
               <input
@@ -217,6 +169,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Dirección */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Dirección</label>
               <input
@@ -227,6 +180,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Ciudad */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Ciudad</label>
               <input
@@ -237,6 +191,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Código Postal */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Código Postal</label>
               <input
@@ -247,6 +202,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Barrio */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Barrio</label>
               <input
@@ -257,6 +213,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Tipo */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Tipo</label>
               <select
@@ -280,6 +237,7 @@ export default function ActivosInmobiliarios() {
               </select>
             </div>
 
+            {/* Precio compra */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Precio Compra (€)</label>
               <input
@@ -291,6 +249,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Precio venta */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Precio Venta (€)</label>
               <input
@@ -302,6 +261,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Superficie */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Superficie (m²)</label>
               <input
@@ -313,6 +273,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Habitaciones */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Habitaciones</label>
               <input
@@ -323,6 +284,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Baños */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Baños</label>
               <input
@@ -333,11 +295,12 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Estado */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Estado</label>
               <select
                 value={formData.estado}
-                onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, estado: e.target.value as any })}
                 className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
               >
                 <option value="EN_ESTUDIO">En Estudio</option>
@@ -346,46 +309,45 @@ export default function ActivosInmobiliarios() {
               </select>
             </div>
 
-            {/* checks */}
+            {/* Checks */}
             <div className="md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 bg-wos-bg/50 p-4 rounded-lg border border-wos-border">
-              <div className="flex items-center gap-3">
+              <label className="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  id="nota_simple"
                   checked={formData.nota_simple}
                   onChange={(e) => setFormData({ ...formData, nota_simple: e.target.checked })}
-                  className="w-5 h-5 rounded border-wos-border bg-wos-bg text-wos-accent focus:ring-wos-accent focus:ring-offset-0"
                 />
-                <label htmlFor="nota_simple" className="text-wos-text cursor-pointer">
-                  Nota Simple
-                </label>
-              </div>
+                <span className="text-wos-text">Nota Simple</span>
+              </label>
 
-              <div className="flex items-center gap-3">
+              <label className="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  id="deudas"
                   checked={formData.deudas}
                   onChange={(e) => setFormData({ ...formData, deudas: e.target.checked })}
-                  className="w-5 h-5 rounded border-wos-border bg-wos-bg text-wos-accent focus:ring-wos-accent focus:ring-offset-0"
                 />
-                <label htmlFor="deudas" className="text-wos-text cursor-pointer">
-                  Deudas
-                </label>
-              </div>
+                <span className="text-wos-text">Deudas</span>
+              </label>
 
-              <div className="flex items-center gap-3">
+              <label className="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  id="ocupado"
                   checked={formData.ocupado}
                   onChange={(e) => setFormData({ ...formData, ocupado: e.target.checked })}
-                  className="w-5 h-5 rounded border-wos-border bg-wos-bg text-wos-accent focus:ring-wos-accent focus:ring-offset-0"
                 />
-                <label htmlFor="ocupado" className="text-wos-text cursor-pointer">
-                  Ocupado
-                </label>
-              </div>
+                <span className="text-wos-text">Ocupado</span>
+              </label>
+            </div>
+
+            {/* Descripción */}
+            <div className="md:col-span-2 lg:col-span-3">
+              <label className="block text-sm text-wos-text-muted mb-2">Descripción</label>
+              <textarea
+                rows={3}
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+              />
             </div>
 
             <div className="md:col-span-2 lg:col-span-3 flex gap-3">
@@ -394,7 +356,7 @@ export default function ActivosInmobiliarios() {
               </button>
               <button
                 type="button"
-                onClick={resetForm}
+                onClick={() => { setShowForm(false); setEditingId(null); setFormData({ ...emptyForm }); }}
                 className="bg-wos-border text-wos-text px-6 py-2 rounded-lg hover:bg-wos-card transition-smooth"
               >
                 Cancelar
@@ -404,7 +366,7 @@ export default function ActivosInmobiliarios() {
         </div>
       )}
 
-      {/* TABLA */}
+      {/* Tabla */}
       <div className="bg-wos-card border border-wos-border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -434,24 +396,6 @@ export default function ActivosInmobiliarios() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex justify-end gap-2">
-                      {inmueble.estado === 'EN_ESTUDIO' && (
-                        <button
-                          onClick={() => handleMarcarComprado(inmueble.id)}
-                          className="p-2 hover:bg-green-500/20 rounded-lg transition-smooth"
-                          title="Marcar como comprado"
-                        >
-                          <Check size={18} className="text-green-500" />
-                        </button>
-                      )}
-                      {inmueble.estado !== 'EN_ESTUDIO' && (
-                        <button
-                          onClick={() => handleMarcarEnEstudio(inmueble.id)}
-                          className="p-2 hover:bg-yellow-500/20 rounded-lg transition-smooth"
-                          title="Volver a En estudio"
-                        >
-                          <Check size={18} className="text-yellow-400 rotate-180" />
-                        </button>
-                      )}
                       <button
                         onClick={() => handleEdit(inmueble)}
                         className="p-2 hover:bg-wos-bg rounded-lg transition-smooth"
