@@ -27,21 +27,24 @@ export default function ActivosInmobiliarios() {
     ocupado: false,
   });
 
+  // Cargar inmuebles
   useEffect(() => {
     loadInmuebles();
   }, []);
 
   const loadInmuebles = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('inmuebles')
       .select('*')
       .order('created_at', { ascending: false });
-    if (data) setInmuebles(data);
+    if (error) console.error('Error cargando inmuebles:', error);
+    else setInmuebles(data || []);
   };
 
+  // Guardar o actualizar inmueble
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const dataToSave = {
       nombre: formData.nombre,
       direccion: formData.direccion || null,
@@ -56,8 +59,8 @@ export default function ActivosInmobiliarios() {
       banos: formData.banos ? parseInt(formData.banos) : null,
       descripcion: formData.descripcion || null,
 
-      // 🔧 FIX: este valor ahora se guarda correctamente en la base
-      estado: formData.estado as 'EN_ESTUDIO' | 'COMPRADO' | 'VENDIDO',
+      // 🔧 Fix: garantizamos que se guarde el estado elegido
+      estado: formData.estado,
 
       nota_simple: formData.nota_simple,
       deudas: formData.deudas,
@@ -73,9 +76,10 @@ export default function ActivosInmobiliarios() {
     }
 
     resetForm();
-    loadInmuebles();
+    await loadInmuebles();
   };
 
+  // Editar inmueble
   const handleEdit = (inmueble: Inmueble) => {
     setEditingId(inmueble.id);
     setFormData({
@@ -99,13 +103,16 @@ export default function ActivosInmobiliarios() {
     setShowForm(true);
   };
 
+  // Eliminar inmueble
   const handleDelete = async (id: string) => {
     if (confirm('¿Seguro que deseas eliminar este inmueble?')) {
-      await supabase.from('inmuebles').delete().eq('id', id);
-      loadInmuebles();
+      const { error } = await supabase.from('inmuebles').delete().eq('id', id);
+      if (error) console.error('❌ Error al eliminar:', error);
+      else await loadInmuebles();
     }
   };
 
+  // Reset form
   const resetForm = () => {
     setFormData({
       nombre: '',
@@ -144,6 +151,7 @@ export default function ActivosInmobiliarios() {
 
   return (
     <div className="p-8">
+      {/* Encabezado */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-wos-accent mb-2">Activos Inmobiliarios</h1>
@@ -164,8 +172,8 @@ export default function ActivosInmobiliarios() {
           <h2 className="text-xl font-semibold mb-6 text-wos-accent">
             {editingId ? 'Editar Inmueble' : 'Nuevo Inmueble'}
           </h2>
+
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* --- Nombre --- */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Nombre *</label>
               <input
@@ -177,29 +185,6 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
-            {/* --- Dirección --- */}
-            <div>
-              <label className="block text-sm text-wos-text-muted mb-2">Dirección</label>
-              <input
-                type="text"
-                value={formData.direccion}
-                onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
-              />
-            </div>
-
-            {/* --- Ciudad --- */}
-            <div>
-              <label className="block text-sm text-wos-text-muted mb-2">Ciudad</label>
-              <input
-                type="text"
-                value={formData.ciudad}
-                onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
-                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
-              />
-            </div>
-
-            {/* --- Estado --- */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Estado</label>
               <select
@@ -213,7 +198,7 @@ export default function ActivosInmobiliarios() {
               </select>
             </div>
 
-            <div className="md:col-span-2 lg:col-span-3 flex gap-3">
+            <div className="md:col-span-3 flex gap-3">
               <button
                 type="submit"
                 className="bg-wos-accent text-wos-bg px-6 py-2 rounded-lg hover:opacity-90 transition-smooth"
@@ -232,7 +217,7 @@ export default function ActivosInmobiliarios() {
         </div>
       )}
 
-      {/* --- Tabla de inmuebles --- */}
+      {/* Tabla */}
       <div className="bg-wos-card border border-wos-border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -283,7 +268,9 @@ export default function ActivosInmobiliarios() {
             </tbody>
           </table>
           {inmuebles.length === 0 && (
-            <div className="text-center py-12 text-wos-text-muted">No hay inmuebles registrados</div>
+            <div className="text-center py-12 text-wos-text-muted">
+              No hay inmuebles registrados
+            </div>
           )}
         </div>
       </div>
