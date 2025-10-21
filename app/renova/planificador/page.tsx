@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, PartidaReforma } from '@/lib/supabase';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, Clock, PlayCircle } from 'lucide-react';
 
-// 🔧 Recalcular presupuesto y avance en reformas
+// 🔹 Función: recalcular presupuesto y avance de la reforma
 async function actualizarPresupuestoYAvance(reformaId: string) {
   const { data: partidas, error } = await supabase
     .from('planificacion_reforma')
@@ -27,11 +27,7 @@ async function actualizarPresupuestoYAvance(reformaId: string) {
 
   const { error: updateError } = await supabase
     .from('reformas')
-    .update({
-      presupuesto: presupuestoTotal,
-      avance: avance,
-      estado: estado,
-    })
+    .update({ presupuesto: presupuestoTotal, avance, estado })
     .eq('id', reformaId);
 
   if (updateError)
@@ -47,6 +43,7 @@ export default function PlanificadorPage() {
   const [reformaInfo, setReformaInfo] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     partida: '',
     profesional: '',
@@ -57,10 +54,12 @@ export default function PlanificadorPage() {
     estado: 'pendiente' as 'pendiente' | 'en_proceso' | 'finalizado',
   });
 
+  // 🔹 Cargar reformas
   useEffect(() => {
     loadReformas();
   }, []);
 
+  // 🔹 Cargar partidas al cambiar de reforma
   useEffect(() => {
     if (reformaSeleccionada) {
       loadPartidas();
@@ -162,9 +161,23 @@ export default function PlanificadorPage() {
     }
   };
 
+  const handleCambiarEstado = async (id: string, nuevoEstado: 'pendiente' | 'en_proceso' | 'finalizado') => {
+    await supabase.from('planificacion_reforma').update({ estado: nuevoEstado }).eq('id', id);
+    await actualizarPresupuestoYAvance(reformaSeleccionada);
+    await loadPartidas();
+    await loadReformaInfo();
+  };
+
   const totales = {
     costo: partidas.reduce((sum, p) => sum + (p.costo || 0), 0),
     tiempo: partidas.reduce((sum, p) => sum + (p.tiempo_dias || 0), 0),
+  };
+
+  const estadisticas = {
+    total: partidas.length,
+    pendientes: partidas.filter((p) => p.estado === 'pendiente').length,
+    en_proceso: partidas.filter((p) => p.estado === 'en_proceso').length,
+    finalizadas: partidas.filter((p) => p.estado === 'finalizado').length,
   };
 
   const getEstadoColor = (estado: string) => {
@@ -178,14 +191,9 @@ export default function PlanificadorPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-wos-accent mb-2">Planificador de Reformas</h1>
-        <p className="text-wos-text-muted">
-          Gestión de partidas · Cálculo automático de presupuesto y avance
-        </p>
-      </div>
+      <h1 className="text-3xl font-bold text-wos-accent mb-6">Planificador de Reformas</h1>
 
-      {/* Selector de Reforma */}
+      {/* 🔸 Selector de reforma */}
       <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-6">
         <label className="block text-sm text-wos-text-muted mb-2">Seleccionar Reforma</label>
         <select
@@ -208,44 +216,35 @@ export default function PlanificadorPage() {
         </div>
       )}
 
-      {reformaSeleccionada && reformaInfo && (
+      {reformaSeleccionada && (
         <>
-          <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-wos-accent mb-4">{reformaInfo.nombre}</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <p className="text-xs text-wos-text-muted mb-1">Presupuesto Total</p>
-                <p className="text-2xl font-bold text-wos-accent">
-                  €{reformaInfo.presupuesto?.toLocaleString() || '0'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-wos-text-muted mb-1">Avance</p>
-                <p className="text-2xl font-bold text-wos-accent">{reformaInfo.avance || 0}%</p>
-              </div>
-              <div>
-                <p className="text-xs text-wos-text-muted mb-1">Estado</p>
-                <p className="text-lg font-semibold text-wos-text capitalize">{reformaInfo.estado}</p>
-              </div>
-              <div>
-                <p className="text-xs text-wos-text-muted mb-1">Tiempo Total</p>
-                <p className="text-2xl font-bold text-wos-accent">{totales.tiempo}</p>
+          {reformaInfo && (
+            <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-6">
+              <h2 className="text-xl font-semibold text-wos-accent mb-4">{reformaInfo.nombre}</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-xs text-wos-text-muted mb-1">Presupuesto Total</p>
+                  <p className="text-2xl font-bold text-wos-accent">
+                    €{reformaInfo.presupuesto?.toLocaleString() || '0'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-wos-text-muted mb-1">Avance</p>
+                  <p className="text-2xl font-bold text-wos-accent">{reformaInfo.avance || 0}%</p>
+                </div>
+                <div>
+                  <p className="text-xs text-wos-text-muted mb-1">Estado</p>
+                  <p className="text-lg font-semibold text-wos-text capitalize">{reformaInfo.estado}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-wos-text-muted mb-1">Tiempo Total</p>
+                  <p className="text-2xl font-bold text-wos-accent">{totales.tiempo}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Botón Nueva Partida */}
-          <div className="flex justify-end mb-6">
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="flex items-center gap-2 bg-wos-accent text-wos-bg px-4 py-2 rounded-lg hover:opacity-90 transition-smooth"
-            >
-              <Plus size={20} />
-              Nueva Partida
-            </button>
-          </div>
-
-          {/* Formulario */}
+          {/* 🔹 Formulario de nueva partida */}
           {showForm && (
             <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-6">
               <h2 className="text-xl font-semibold mb-6 text-wos-accent">
@@ -259,8 +258,7 @@ export default function PlanificadorPage() {
                     required
                     value={formData.partida}
                     onChange={(e) => setFormData({ ...formData, partida: e.target.value })}
-                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
-                    placeholder="Ej: Fontanería, Electricidad..."
+                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2"
                   />
                 </div>
 
@@ -270,8 +268,7 @@ export default function PlanificadorPage() {
                     type="text"
                     value={formData.profesional}
                     onChange={(e) => setFormData({ ...formData, profesional: e.target.value })}
-                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
-                    placeholder="Nombre del profesional"
+                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2"
                   />
                 </div>
 
@@ -282,7 +279,7 @@ export default function PlanificadorPage() {
                     step="0.01"
                     value={formData.costo}
                     onChange={(e) => setFormData({ ...formData, costo: e.target.value })}
-                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2"
                   />
                 </div>
 
@@ -292,21 +289,39 @@ export default function PlanificadorPage() {
                     type="number"
                     value={formData.tiempo_dias}
                     onChange={(e) => setFormData({ ...formData, tiempo_dias: e.target.value })}
-                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2"
                   />
                 </div>
 
-                <div className="md:col-span-2 flex gap-3">
+                <div>
+                  <label className="block text-sm text-wos-text-muted mb-2">Estado</label>
+                  <select
+                    value={formData.estado}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        estado: e.target.value as 'pendiente' | 'en_proceso' | 'finalizado',
+                      })
+                    }
+                    className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2"
+                  >
+                    <option value="pendiente">Pendiente</option>
+                    <option value="en_proceso">En Proceso</option>
+                    <option value="finalizado">Finalizado</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2 flex gap-3 mt-4">
                   <button
                     type="submit"
-                    className="bg-wos-accent text-wos-bg px-6 py-2 rounded-lg hover:opacity-90 transition-smooth"
+                    className="bg-wos-accent text-wos-bg px-6 py-2 rounded-lg"
                   >
                     Guardar
                   </button>
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="bg-wos-border text-wos-text px-6 py-2 rounded-lg hover:opacity-80 transition-smooth"
+                    className="bg-wos-border text-wos-text px-6 py-2 rounded-lg"
                   >
                     Cancelar
                   </button>
@@ -315,7 +330,18 @@ export default function PlanificadorPage() {
             </div>
           )}
 
-          {/* Tabla de Partidas */}
+          {/* 🔹 Botón de nueva partida */}
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="flex items-center gap-2 bg-wos-accent text-wos-bg px-4 py-2 rounded-lg"
+            >
+              <Plus size={20} />
+              Nueva Partida
+            </button>
+          </div>
+
+          {/* 🔹 Tabla de partidas */}
           <div className="bg-wos-card border border-wos-border rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -342,22 +368,30 @@ export default function PlanificadorPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button onClick={() => handleEdit(p)} className="text-blue-400 hover:underline mr-3">
-                          <Edit2 size={16} className="inline-block mr-1" /> Editar
+                        <button
+                          onClick={() => handleEdit(p)}
+                          className="p-2 hover:bg-blue-500/20 rounded-lg transition-smooth"
+                        >
+                          <Edit2 size={18} className="text-blue-400" />
                         </button>
-                        <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:underline">
-                          <Trash2 size={16} className="inline-block mr-1" /> Eliminar
+                        <button
+                          onClick={() => handleDelete(p.id)}
+                          className="p-2 hover:bg-red-500/20 rounded-lg transition-smooth"
+                        >
+                          <Trash2 size={18} className="text-red-500" />
                         </button>
                       </td>
                     </tr>
                   ))}
+                  {partidas.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-wos-text-muted">
+                        No hay partidas registradas para esta reforma
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
-              {partidas.length === 0 && (
-                <div className="text-center py-12 text-wos-text-muted">
-                  No hay partidas registradas para esta reforma
-                </div>
-              )}
             </div>
           </div>
         </>
