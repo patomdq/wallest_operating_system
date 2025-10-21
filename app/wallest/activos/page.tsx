@@ -22,6 +22,9 @@ export default function ActivosInmobiliarios() {
     banos: '',
     descripcion: '',
     estado: 'EN_ESTUDIO',
+    nota_simple: false,
+    deudas: false,
+    ocupado: false,
   });
 
   useEffect(() => {
@@ -29,18 +32,17 @@ export default function ActivosInmobiliarios() {
   }, []);
 
   const loadInmuebles = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('inmuebles')
       .select('*')
       .order('created_at', { ascending: false });
-    if (!error && data) setInmuebles(data);
+    if (data) setInmuebles(data);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 🧠 Si el estado es COMPRADO, asigna fecha_compra automáticamente
-    const updateData: any = {
+    const dataToSave = {
       nombre: formData.nombre,
       direccion: formData.direccion || null,
       ciudad: formData.ciudad || null,
@@ -53,26 +55,17 @@ export default function ActivosInmobiliarios() {
       habitaciones: formData.habitaciones ? parseInt(formData.habitaciones) : null,
       banos: formData.banos ? parseInt(formData.banos) : null,
       descripcion: formData.descripcion || null,
-      estado: formData.estado,
-      updated_at: new Date().toISOString(),
+      estado: formData.estado, // ✅ ESTA LÍNEA ES LA QUE ASEGURA EL GUARDADO CORRECTO
+      nota_simple: formData.nota_simple,
+      deudas: formData.deudas,
+      ocupado: formData.ocupado,
     };
 
-    if (formData.estado === 'COMPRADO') {
-      updateData.fecha_compra = new Date().toISOString();
-    } else {
-      updateData.fecha_compra = null;
-    }
-
-    let error;
     if (editingId) {
-      ({ error } = await supabase.from('inmuebles').update(updateData).eq('id', editingId));
+      await supabase.from('inmuebles').update(dataToSave).eq('id', editingId);
     } else {
-      updateData.created_at = new Date().toISOString();
-      ({ error } = await supabase.from('inmuebles').insert([updateData]));
+      await supabase.from('inmuebles').insert([dataToSave]);
     }
-
-    if (error) console.error('❌ Error guardando inmueble:', error);
-    else console.log('✅ Inmueble guardado correctamente');
 
     resetForm();
     loadInmuebles();
@@ -81,7 +74,7 @@ export default function ActivosInmobiliarios() {
   const handleEdit = (inmueble: Inmueble) => {
     setEditingId(inmueble.id);
     setFormData({
-      nombre: inmueble.nombre || '',
+      nombre: inmueble.nombre,
       direccion: inmueble.direccion || '',
       ciudad: inmueble.ciudad || '',
       codigo_postal: inmueble.codigo_postal || '',
@@ -94,6 +87,9 @@ export default function ActivosInmobiliarios() {
       banos: inmueble.banos?.toString() || '',
       descripcion: inmueble.descripcion || '',
       estado: inmueble.estado || 'EN_ESTUDIO',
+      nota_simple: inmueble.nota_simple || false,
+      deudas: inmueble.deudas || false,
+      ocupado: inmueble.ocupado || false,
     });
     setShowForm(true);
   };
@@ -120,6 +116,9 @@ export default function ActivosInmobiliarios() {
       banos: '',
       descripcion: '',
       estado: 'EN_ESTUDIO',
+      nota_simple: false,
+      deudas: false,
+      ocupado: false,
     });
     setEditingId(null);
     setShowForm(false);
@@ -160,6 +159,7 @@ export default function ActivosInmobiliarios() {
             {editingId ? 'Editar Inmueble' : 'Nuevo Inmueble'}
           </h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Nombre *</label>
               <input
@@ -171,26 +171,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm text-wos-text-muted mb-2">Dirección</label>
-              <input
-                type="text"
-                value={formData.direccion}
-                onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-wos-text-muted mb-2">Ciudad</label>
-              <input
-                type="text"
-                value={formData.ciudad}
-                onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
-                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text"
-              />
-            </div>
-
+            {/* 🔹 Campo Estado */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Estado</label>
               <select
@@ -204,7 +185,18 @@ export default function ActivosInmobiliarios() {
               </select>
             </div>
 
-            <div className="md:col-span-2 lg:col-span-3 flex gap-3">
+            {/* 🔹 Otros campos... */}
+            <div>
+              <label className="block text-sm text-wos-text-muted mb-2">Ciudad</label>
+              <input
+                type="text"
+                value={formData.ciudad}
+                onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
+                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text"
+              />
+            </div>
+
+            <div className="md:col-span-3 flex gap-3 mt-4">
               <button
                 type="submit"
                 className="bg-wos-accent text-wos-bg px-6 py-2 rounded-lg hover:opacity-90 transition-smooth"
@@ -223,57 +215,56 @@ export default function ActivosInmobiliarios() {
         </div>
       )}
 
+      {/* Tabla */}
       <div className="bg-wos-card border border-wos-border rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-wos-bg border-b border-wos-border">
-            <tr>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Nombre</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Ciudad</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Tipo</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Precio Compra</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Estado</th>
-              <th className="text-right px-6 py-4 text-sm font-semibold text-wos-text-muted">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {inmuebles.map((i) => (
-              <tr key={i.id} className="border-b border-wos-border hover:bg-wos-bg">
-                <td className="px-6 py-4 text-wos-text">{i.nombre}</td>
-                <td className="px-6 py-4 text-wos-text-muted">{i.ciudad || '-'}</td>
-                <td className="px-6 py-4 text-wos-text-muted">{i.tipo || '-'}</td>
-                <td className="px-6 py-4 text-wos-text">
-                  {i.precio_compra ? `€${i.precio_compra.toLocaleString()}` : '-'}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${getEstadoColor(i.estado)}`}
-                  >
-                    {i.estado}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => handleEdit(i)} className="p-2 hover:bg-wos-bg rounded-lg">
-                      <Edit2 size={18} className="text-wos-text-muted" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(i.id)}
-                      className="p-2 hover:bg-red-500/20 rounded-lg"
-                    >
-                      <Trash2 size={18} className="text-red-500" />
-                    </button>
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-wos-bg border-b border-wos-border">
+              <tr>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Nombre</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Ciudad</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Tipo</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Precio Compra</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Estado</th>
+                <th className="text-right px-6 py-4 text-sm font-semibold text-wos-text-muted">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {inmuebles.length === 0 && (
-          <div className="text-center py-12 text-wos-text-muted">
-            No hay inmuebles registrados
-          </div>
-        )}
+            </thead>
+            <tbody>
+              {inmuebles.map((inmueble) => (
+                <tr key={inmueble.id} className="border-b border-wos-border hover:bg-wos-bg">
+                  <td className="px-6 py-4 text-wos-text">{inmueble.nombre}</td>
+                  <td className="px-6 py-4 text-wos-text-muted">{inmueble.ciudad || '-'}</td>
+                  <td className="px-6 py-4 text-wos-text-muted capitalize">{inmueble.tipo || '-'}</td>
+                  <td className="px-6 py-4 text-wos-text">
+                    {inmueble.precio_compra ? `€${inmueble.precio_compra.toLocaleString()}` : '-'}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getEstadoColor(inmueble.estado)}`}
+                    >
+                      {inmueble.estado}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => handleEdit(inmueble)} className="p-2 hover:bg-wos-bg rounded-lg">
+                        <Edit2 size={18} className="text-wos-text-muted" />
+                      </button>
+                      <button onClick={() => handleDelete(inmueble.id)} className="p-2 hover:bg-red-500/20 rounded-lg">
+                        <Trash2 size={18} className="text-red-500" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {inmuebles.length === 0 && (
+            <div className="text-center py-12 text-wos-text-muted">
+              No hay inmuebles registrados
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
