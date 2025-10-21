@@ -1,15 +1,14 @@
-Me parece que este es el código original, revisa que esté toda la tabla completa
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import { supabase, Inmueble } from '@/lib/supabase';
-import { Plus, Edit2, Trash2, Eye, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 
 export default function ActivosInmobiliarios() {
   const [inmuebles, setInmuebles] = useState<Inmueble[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     nombre: '',
     direccion: '',
@@ -23,29 +22,36 @@ export default function ActivosInmobiliarios() {
     habitaciones: '',
     banos: '',
     descripcion: '',
-    estado: 'EN_ESTUDIO',
+    estado: 'EN_ESTUDIO' as 'EN_ESTUDIO' | 'COMPRADO' | 'VENDIDO',
     nota_simple: false,
     deudas: false,
     ocupado: false,
   });
 
+  // --------------------------
+  // CARGA INICIAL
+  // --------------------------
   useEffect(() => {
     loadInmuebles();
   }, []);
 
   const loadInmuebles = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('inmuebles')
       .select('*')
       .order('created_at', { ascending: false });
-    if (data) setInmuebles(data);
+
+    if (!error && data) setInmuebles(data as Inmueble[]);
   };
 
+  // --------------------------
+  // GUARDAR / ACTUALIZAR
+  // --------------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const dataToSave = {
-      nombre: formData.nombre,
+      nombre: formData.nombre || null,
       direccion: formData.direccion || null,
       ciudad: formData.ciudad || null,
       codigo_postal: formData.codigo_postal || null,
@@ -57,60 +63,63 @@ export default function ActivosInmobiliarios() {
       habitaciones: formData.habitaciones ? parseInt(formData.habitaciones) : null,
       banos: formData.banos ? parseInt(formData.banos) : null,
       descripcion: formData.descripcion || null,
-      estado: formData.estado,
+      estado: formData.estado, // <- CLAVE: enviamos el string tal cual
       nota_simple: formData.nota_simple,
       deudas: formData.deudas,
       ocupado: formData.ocupado,
     };
 
     if (editingId) {
+      // actualizar
       await supabase.from('inmuebles').update(dataToSave).eq('id', editingId);
     } else {
+      // crear
       await supabase.from('inmuebles').insert([dataToSave]);
     }
 
+    await loadInmuebles();
     resetForm();
-    loadInmuebles();
   };
 
+  // --------------------------
+  // EDITAR
+  // --------------------------
   const handleEdit = (inmueble: Inmueble) => {
     setEditingId(inmueble.id);
     setFormData({
-      nombre: inmueble.nombre,
+      nombre: inmueble.nombre || '',
       direccion: inmueble.direccion || '',
       ciudad: inmueble.ciudad || '',
       codigo_postal: inmueble.codigo_postal || '',
       barrio: inmueble.barrio || '',
       tipo: inmueble.tipo || '',
-      precio_compra: inmueble.precio_compra?.toString() || '',
-      precio_venta: inmueble.precio_venta?.toString() || '',
-      superficie: inmueble.superficie?.toString() || '',
-      habitaciones: inmueble.habitaciones?.toString() || '',
-      banos: inmueble.banos?.toString() || '',
+      precio_compra: inmueble.precio_compra != null ? String(inmueble.precio_compra) : '',
+      precio_venta: inmueble.precio_venta != null ? String(inmueble.precio_venta) : '',
+      superficie: inmueble.superficie != null ? String(inmueble.superficie) : '',
+      habitaciones: inmueble.habitaciones != null ? String(inmueble.habitaciones) : '',
+      banos: inmueble.banos != null ? String(inmueble.banos) : '',
       descripcion: inmueble.descripcion || '',
-      estado: inmueble.estado,
-      nota_simple: inmueble.nota_simple || false,
-      deudas: inmueble.deudas || false,
-      ocupado: inmueble.ocupado || false,
+      estado: (inmueble.estado as 'EN_ESTUDIO' | 'COMPRADO' | 'VENDIDO') || 'EN_ESTUDIO',
+      nota_simple: Boolean(inmueble.nota_simple),
+      deudas: Boolean(inmueble.deudas),
+      ocupado: Boolean(inmueble.ocupado),
     });
     setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // --------------------------
+  // ELIMINAR
+  // --------------------------
   const handleDelete = async (id: string) => {
-    if (confirm('¿Seguro que deseas eliminar este inmueble?')) {
-      await supabase.from('inmuebles').delete().eq('id', id);
-      loadInmuebles();
-    }
+    if (!confirm('¿Seguro que deseas eliminar este inmueble?')) return;
+    await supabase.from('inmuebles').delete().eq('id', id);
+    await loadInmuebles();
   };
 
-  const handleMarcarComprado = async (id: string) => {
-    await supabase
-      .from('inmuebles')
-      .update({ estado: 'COMPRADO', fecha_compra: new Date().toISOString() })
-      .eq('id', id);
-    loadInmuebles();
-  };
-
+  // --------------------------
+  // UI
+  // --------------------------
   const resetForm = () => {
     setFormData({
       nombre: '',
@@ -143,7 +152,7 @@ export default function ActivosInmobiliarios() {
       case 'VENDIDO':
         return 'bg-blue-500/20 text-blue-500';
       default:
-        return 'bg-gray-500/20 text-gray-500';
+        return 'bg-gray-500/20 text-gray-400';
     }
   };
 
@@ -154,8 +163,18 @@ export default function ActivosInmobiliarios() {
           <h1 className="text-3xl font-bold text-wos-accent mb-2">Activos Inmobiliarios</h1>
           <p className="text-wos-text-muted">Gestión completa de propiedades</p>
         </div>
+
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            if (showForm && editingId) {
+              // si estoy editando y toco "Nuevo", primero limpio
+              resetForm();
+              setShowForm(true);
+            } else {
+              setShowForm((s) => !s);
+              if (!showForm) setEditingId(null);
+            }
+          }}
           className="flex items-center gap-2 bg-wos-accent text-wos-bg px-4 py-2 rounded-lg hover:opacity-90 transition-smooth"
         >
           <Plus size={20} />
@@ -169,7 +188,9 @@ export default function ActivosInmobiliarios() {
           <h2 className="text-xl font-semibold mb-6 text-wos-accent">
             {editingId ? 'Editar Inmueble' : 'Nuevo Inmueble'}
           </h2>
+
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Nombre */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Nombre *</label>
               <input
@@ -181,6 +202,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Dirección */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Dirección</label>
               <input
@@ -191,6 +213,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Ciudad */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Ciudad</label>
               <input
@@ -201,6 +224,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Código Postal */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Código Postal</label>
               <input
@@ -211,6 +235,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Barrio */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Barrio</label>
               <input
@@ -221,6 +246,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Tipo */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Tipo</label>
               <select
@@ -244,6 +270,7 @@ export default function ActivosInmobiliarios() {
               </select>
             </div>
 
+            {/* Precio compra */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Precio Compra (€)</label>
               <input
@@ -255,6 +282,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Precio venta */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Precio Venta (€)</label>
               <input
@@ -266,6 +294,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Superficie */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Superficie (m²)</label>
               <input
@@ -277,6 +306,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Habitaciones */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Habitaciones</label>
               <input
@@ -287,6 +317,7 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Baños */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Baños</label>
               <input
@@ -297,11 +328,17 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Estado */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Estado</label>
               <select
                 value={formData.estado}
-                onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    estado: e.target.value as 'EN_ESTUDIO' | 'COMPRADO' | 'VENDIDO',
+                  })
+                }
                 className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
               >
                 <option value="EN_ESTUDIO">En Estudio</option>
@@ -352,6 +389,7 @@ export default function ActivosInmobiliarios() {
               </div>
             </div>
 
+            {/* Descripción */}
             <div className="md:col-span-2 lg:col-span-3">
               <label className="block text-sm text-wos-text-muted mb-2">Descripción</label>
               <textarea
@@ -362,11 +400,9 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
+            {/* Botones */}
             <div className="md:col-span-2 lg:col-span-3 flex gap-3">
-              <button
-                type="submit"
-                className="bg-wos-accent text-wos-bg px-6 py-2 rounded-lg hover:opacity-90 transition-smooth"
-              >
+              <button type="submit" className="bg-wos-accent text-wos-bg px-6 py-2 rounded-lg hover:opacity-90 transition-smooth">
                 {editingId ? 'Actualizar' : 'Guardar'}
               </button>
               <button
@@ -381,30 +417,18 @@ export default function ActivosInmobiliarios() {
         </div>
       )}
 
-      {/* Tabla de inmuebles */}
+      {/* Tabla */}
       <div className="bg-wos-card border border-wos-border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-wos-bg border-b border-wos-border">
               <tr>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                  Nombre
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                  Ciudad
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                  Tipo
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                  Precio Compra
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                  Estado
-                </th>
-                <th className="text-right px-6 py-4 text-sm font-semibold text-wos-text-muted">
-                  Acciones
-                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Nombre</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Ciudad</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Tipo</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Precio Compra</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-wos-text-muted">Estado</th>
+                <th className="text-right px-6 py-4 text-sm font-semibold text-wos-text-muted">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -412,41 +436,30 @@ export default function ActivosInmobiliarios() {
                 <tr key={inmueble.id} className="border-b border-wos-border hover:bg-wos-bg">
                   <td className="px-6 py-4 text-wos-text">{inmueble.nombre}</td>
                   <td className="px-6 py-4 text-wos-text-muted">{inmueble.ciudad || '-'}</td>
-                  <td className="px-6 py-4 text-wos-text-muted capitalize">
-                    {inmueble.tipo || '-'}
-                  </td>
+                  <td className="px-6 py-4 text-wos-text-muted capitalize">{inmueble.tipo || '-'}</td>
                   <td className="px-6 py-4 text-wos-text">
-                    {inmueble.precio_compra ? `€${inmueble.precio_compra.toLocaleString()}` : '-'}
+                    {inmueble.precio_compra != null ? `€${inmueble.precio_compra.toLocaleString()}` : '-'}
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${getEstadoColor(
-                        inmueble.estado
-                      )}`}
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getEstadoColor(inmueble.estado as string)}`}
                     >
                       {inmueble.estado}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex justify-end gap-2">
-                      {inmueble.estado === 'EN_ESTUDIO' && (
-                        <button
-                          onClick={() => handleMarcarComprado(inmueble.id)}
-                          className="p-2 hover:bg-green-500/20 rounded-lg transition-smooth"
-                          title="Marcar como comprado"
-                        >
-                          <Check size={18} className="text-green-500" />
-                        </button>
-                      )}
                       <button
                         onClick={() => handleEdit(inmueble)}
                         className="p-2 hover:bg-wos-bg rounded-lg transition-smooth"
+                        title="Editar"
                       >
                         <Edit2 size={18} className="text-wos-text-muted" />
                       </button>
                       <button
                         onClick={() => handleDelete(inmueble.id)}
                         className="p-2 hover:bg-red-500/20 rounded-lg transition-smooth"
+                        title="Eliminar"
                       >
                         <Trash2 size={18} className="text-red-500" />
                       </button>
@@ -456,10 +469,9 @@ export default function ActivosInmobiliarios() {
               ))}
             </tbody>
           </table>
+
           {inmuebles.length === 0 && (
-            <div className="text-center py-12 text-wos-text-muted">
-              No hay inmuebles registrados
-            </div>
+            <div className="text-center py-12 text-wos-text-muted">No hay inmuebles registrados</div>
           )}
         </div>
       </div>
