@@ -276,7 +276,7 @@ export default function ReformasPage() {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-wos-text-muted">Presupuesto Total:</span>
                 <span className="text-sm font-semibold text-wos-accent">
-                  €{r.presupuesto_total?.toLocaleString() || '0'}
+                  €{r.presupuesto?.toLocaleString() || '0'}
                 </span>
               </div>
 
