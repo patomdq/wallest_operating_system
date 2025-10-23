@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 
@@ -18,7 +18,7 @@ type Inmueble = {
   habitaciones: number | null;
   banos: number | null;
   descripcion: string | null;
-  estado: 'EN_ESTUDIO' | 'COMPRADO' | 'VENDIDO';
+  estado: 'EN_ESTUDIO' | 'ARRAS' | 'COMPRADO' | 'VENDIDO';
   fecha_alta: string | null;
   fecha_compra: string | null;
   created_at: string | null;
@@ -47,7 +47,6 @@ export default function ActivosInmobiliarios() {
     estado: 'EN_ESTUDIO' as Inmueble['estado'],
   });
 
-  // -------- Helpers
   const limpiar = () => {
     setFormData({
       nombre: '',
@@ -72,6 +71,7 @@ export default function ActivosInmobiliarios() {
   const estadoBadge = (estado: Inmueble['estado']) =>
     ({
       EN_ESTUDIO: 'bg-yellow-500/20 text-yellow-500',
+      ARRAS: 'bg-orange-500/20 text-orange-500',
       COMPRADO: 'bg-green-500/20 text-green-500',
       VENDIDO: 'bg-blue-500/20 text-blue-500',
     }[estado] || 'bg-gray-500/20 text-gray-400');
@@ -79,106 +79,68 @@ export default function ActivosInmobiliarios() {
   const precioFmt = (n: number | null) =>
     typeof n === 'number' ? `€${n.toLocaleString()}` : '-';
 
-  // -------- Carga
   useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase
-        .from('inmuebles')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error && data) setInmuebles(data as Inmueble[]);
-    })();
+    recargar();
   }, []);
 
   const recargar = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('inmuebles')
       .select('*')
       .order('created_at', { ascending: false });
-    if (data) setInmuebles(data as Inmueble[]);
+    if (!error && data) setInmuebles(data as Inmueble[]);
+  };
+const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const limpiarNumero = (v: any) =>
+        v === '' || v === null || v === undefined ? null : Number(v);
+
+      const payload: any = {
+        nombre: formData.nombre?.trim() || null,
+        direccion: formData.direccion?.trim() || null,
+        ciudad: formData.ciudad?.trim() || null,
+        codigo_postal: formData.codigo_postal?.trim() || null,
+        barrio: formData.barrio?.trim() || null,
+        tipo: formData.tipo || null,
+        precio_compra: limpiarNumero(formData.precio_compra),
+        precio_venta: limpiarNumero(formData.precio_venta),
+        superficie: limpiarNumero(formData.superficie),
+        habitaciones: limpiarNumero(formData.habitaciones),
+        banos: limpiarNumero(formData.banos),
+        descripcion: formData.descripcion?.trim() || null,
+        estado: formData.estado || 'EN_ESTUDIO',
+      };
+
+      if (editingId) {
+        if (estadoOriginal !== 'COMPRADO' && formData.estado === 'COMPRADO') {
+          payload['fecha_compra'] = new Date().toISOString();
+        } else if (estadoOriginal === 'COMPRADO' && formData.estado !== 'COMPRADO') {
+          payload['fecha_compra'] = null;
+        }
+
+        const { error } = await supabase.from('inmuebles').update(payload).eq('id', editingId);
+        if (error) throw error;
+        console.log('✅ Inmueble actualizado correctamente');
+      } else {
+        if (formData.estado === 'COMPRADO') {
+          payload['fecha_compra'] = new Date().toISOString();
+        }
+
+        const { error } = await supabase.from('inmuebles').insert([payload]);
+        if (error) throw error;
+        console.log('✅ Nuevo inmueble creado');
+      }
+
+      await recargar();
+      limpiar();
+    } catch (err) {
+      console.error('❌ Error en handleSubmit:', err);
+      alert('Ocurrió un error al guardar o actualizar. Revisa la consola.');
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  try {
-    const limpiarNumero = (v: any) =>
-      v === "" || v === null || v === undefined ? null : Number(v);
-
-    const payload = {
-      nombre: formData.nombre?.trim() || null,
-      direccion: formData.direccion?.trim() || null,
-      ciudad: formData.ciudad?.trim() || null,
-      codigo_postal: formData.codigo_postal?.trim() || null,
-      barrio: formData.barrio?.trim() || null,
-      tipo: formData.tipo || null,
-      precio_compra: limpiarNumero(formData.precio_compra),
-      precio_venta: limpiarNumero(formData.precio_venta),
-      superficie: limpiarNumero(formData.superficie),
-      habitaciones: limpiarNumero(formData.habitaciones),
-      banos: limpiarNumero(formData.banos),
-      descripcion: formData.descripcion?.trim() || null,
-      estado: formData.estado || "EN_ESTUDIO",
-   };
-
-    // Si estamos editando, actualizar
-    if (editingId) {
-      const { error } = await supabase.from("inmuebles").update(payload).eq("id", editingId);
-      if (error) {
-        console.error("❌ Error al actualizar inmueble:", error);
-        alert("Error al actualizar inmueble. Ver consola.");
-        return;
-      }
-    } else {
-      // Nuevo inmueble
-      const { error } = await supabase.from("inmuebles").insert([payload]);
-      if (error) {
-        console.error("❌ Error al crear inmueble:", error);
-        alert("Error al crear inmueble. Ver consola.");
-        return;
-      }
-    }
-
-    console.log("✅ Operación exitosa");
-    await loadInmuebles();
-    resetForm();
-  } catch (err) {
-    console.error("❌ Error en handleSubmit:", err);
-    alert("Error inesperado al guardar o actualizar.");
-  }
-};
-    };
-
-    // si cambia a COMPRADO
-    if (editingId) {
-      if (estadoOriginal !== 'COMPRADO' && formData.estado === 'COMPRADO') {
-        payload['fecha_compra'] = new Date().toISOString();
-      } else if (estadoOriginal === 'COMPRADO' && formData.estado !== 'COMPRADO') {
-        payload['fecha_compra'] = null;
-      }
-
-      const { error } = await supabase.from('inmuebles').update(payload).eq('id', editingId);
-      if (error) throw error;
-      console.log('✅ Inmueble actualizado correctamente');
-    } else {
-      // nuevo inmueble
-      if (formData.estado === 'COMPRADO') {
-        payload['fecha_compra'] = new Date().toISOString();
-      }
-
-      const { error } = await supabase.from('inmuebles').insert([payload]);
-      if (error) throw error;
-      console.log('✅ Nuevo inmueble creado');
-    }
-
-    await recargar();
-    limpiar();
-  } catch (err) {
-    console.error('❌ Error en handleSubmit:', err);
-    alert('Ocurrió un error al guardar o actualizar. Revisa la consola.');
-  }
-};
-  // -------- Acciones fila
   const handleEdit = (i: Inmueble) => {
     setEditingId(i.id);
     setEstadoOriginal(i.estado);
@@ -206,9 +168,7 @@ export default function ActivosInmobiliarios() {
     const { error } = await supabase.from('inmuebles').delete().eq('id', id);
     if (!error) await recargar();
   };
-
-  // -------- Render
-  return (
+return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -217,7 +177,6 @@ export default function ActivosInmobiliarios() {
         </div>
         <button
           onClick={() => {
-            // si ya estaba abierto y en modo edición, limpiar
             if (!showForm) {
               limpiar();
               setShowForm(true);
@@ -239,7 +198,6 @@ export default function ActivosInmobiliarios() {
           </h2>
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* fila 1 */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Nombre *</label>
               <input
@@ -269,7 +227,6 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
-            {/* fila 2 */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Código Postal</label>
               <input
@@ -278,7 +235,8 @@ export default function ActivosInmobiliarios() {
                 onChange={(e) => setFormData({ ...formData, codigo_postal: e.target.value })}
                 className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
               />
-           
+            </div>
+
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Tipo</label>
               <select
@@ -302,7 +260,6 @@ export default function ActivosInmobiliarios() {
               </select>
             </div>
 
-            {/* fila 3 */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Precio Compra (€)</label>
               <input
@@ -313,6 +270,7 @@ export default function ActivosInmobiliarios() {
                 className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
               />
             </div>
+
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Precio Venta (€)</label>
               <input
@@ -323,6 +281,7 @@ export default function ActivosInmobiliarios() {
                 className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
               />
             </div>
+
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Superficie (m²)</label>
               <input
@@ -334,7 +293,6 @@ export default function ActivosInmobiliarios() {
               />
             </div>
 
-            {/* fila 4 */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Habitaciones</label>
               <input
@@ -344,6 +302,7 @@ export default function ActivosInmobiliarios() {
                 className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
               />
             </div>
+
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Baños</label>
               <input
@@ -353,6 +312,7 @@ export default function ActivosInmobiliarios() {
                 className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
               />
             </div>
+
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Estado</label>
               <select
@@ -363,12 +323,12 @@ export default function ActivosInmobiliarios() {
                 className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
               >
                 <option value="EN_ESTUDIO">En Estudio</option>
+                <option value="ARRAS">Arras</option>
                 <option value="COMPRADO">Comprado</option>
                 <option value="VENDIDO">Vendido</option>
               </select>
             </div>
 
-            {/* fila 5 */}
             <div className="md:col-span-2 lg:col-span-3">
               <label className="block text-sm text-wos-text-muted mb-2">Descripción</label>
               <textarea
@@ -398,7 +358,6 @@ export default function ActivosInmobiliarios() {
         </div>
       )}
 
-      {/* Tabla */}
       <div className="bg-wos-card border border-wos-border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -424,7 +383,7 @@ export default function ActivosInmobiliarios() {
                       {i.estado}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => handleEdit(i)}
