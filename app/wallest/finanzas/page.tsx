@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, Finanza, Reforma } from '@/lib/supabase';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
 
 export default function Finanzas() {
   const [finanzas, setFinanzas] = useState<Finanza[]>([]);
