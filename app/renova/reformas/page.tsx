@@ -177,11 +177,13 @@ const estadoColor = (estado?: string) => {
 
 {/* Muestra debajo el estado con color */}
 {formData.inmueble_id && (() => {
-  const sel = inmuebles?.find(x => x.id === formData.inmueble_id);
+  const sel = inmuebles?.find((x) => x.id === formData.inmueble_id);
   if (!sel) return null;
   return (
     <div className="mt-2 inline-flex items-center gap-2 px-2 py-1 rounded border border-wos-border">
-      <span className={`inline-block w-2.5 h-2.5 rounded-full ${estadoColor(sel.estado)}`} />
+      <span
+        className={`inline-block w-2.5 h-2.5 rounded-full ${estadoColor(sel.estado)}`}
+      />
       <span className="text-sm text-wos-text-muted">
         {sel.estado?.replace('_', ' ') || 'EN ESTUDIO'}
       </span>
