@@ -8,6 +8,7 @@ export default function Finanzas() {
   const [finanzas, setFinanzas] = useState<Finanza[]>([]);
   const [reformas, setReformas] = useState<Reforma[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     concepto: '',
     tipo: 'ingreso' as 'ingreso' | 'gasto',
@@ -37,20 +38,30 @@ export default function Finanzas() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+
+  if (editingId) {
+    // 🟡 Si estamos editando, actualizar el registro existente
+    await supabase.from('finanzas').update(formData).eq('id', editingId);
+  } else {
+    // 🟢 Si no, crear un nuevo registro
     await supabase.from('finanzas').insert([formData]);
-    setFormData({
-      concepto: '',
-      tipo: 'ingreso',
-      monto: '',
-      proyecto_asociado: '',
-      fecha: new Date().toISOString().split('T')[0],
-      forma_pago: '',
-      comentario: '',
-    });
-    setShowForm(false);
-    loadFinanzas();
-  };
+  }
+
+  // Reset
+  setFormData({
+    concepto: '',
+    tipo: 'ingreso',
+    monto: '',
+    proyecto_asociado: '',
+    fecha: new Date().toISOString().split('T')[0],
+    forma_pago: '',
+    comentario: '',
+  });
+  setEditingId(null);
+  setShowForm(false);
+  loadFinanzas();
+};
 
   const handleDelete = async (id: string) => {
     if (confirm('¿Eliminar este registro?')) {
@@ -305,17 +316,18 @@ export default function Finanzas() {
   <div className="flex justify-end gap-2">
     <button
       onClick={() => {
-        setShowForm(true);
-        setFormData({
-          concepto: f.concepto,
-          tipo: f.tipo,
-          monto: f.monto.toString(),
-          proyecto_asociado: f.proyecto_asociado || '',
-          fecha: f.fecha,
-          forma_pago: f.forma_pago || '',
-          comentario: f.comentario || '',
-        });
-      }}
+  setShowForm(true);
+  setEditingId(f.id);
+  setFormData({
+    concepto: f.concepto,
+    tipo: f.tipo,
+    monto: f.monto.toString(),
+    proyecto_asociado: f.proyecto_asociado || '',
+    fecha: f.fecha,
+    forma_pago: f.forma_pago || '',
+    comentario: f.comentario || '',
+  });
+}}
       className="p-2 hover:bg-wos-bg rounded-lg transition-smooth"
       title="Editar"
     >
