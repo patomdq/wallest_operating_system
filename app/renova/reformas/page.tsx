@@ -20,19 +20,15 @@ export default function ReformasPage() {
   });
 
   // 🔹 Helper para color según estado del inmueble
-  const estadoColor = (estado?: string) => {
-    switch (estado) {
-      case 'COMPRADO':
-        return 'bg-green-500';
-      case 'ARRAS':
-        return 'bg-orange-500';
-      case 'VENDIDO':
-        return 'bg-blue-500';
-      case 'EN_ESTUDIO':
-      default:
-        return 'bg-yellow-500';
-    }
-  };
+  const estadoIcon = (estado?: string) => {
+  switch (estado) {
+    case 'COMPRADO':   return '🟢';
+    case 'ARRAS':      return '🟠';
+    case 'VENDIDO':    return '🔵';
+    case 'EN_ESTUDIO':
+    default:           return '🟡';
+  }
+};
 
   useEffect(() => {
     loadData();
@@ -160,17 +156,17 @@ export default function ReformasPage() {
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Inmueble *</label>
               <select
-                value={formData.inmueble_id}
-                onChange={(e) => setFormData({ ...formData, inmueble_id: e.target.value })}
-                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
-              >
-                <option value="">Seleccionar inmueble</option>
-                {inmuebles?.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.nombre} — {i.estado?.replace('_', ' ')}
-                  </option>
-                ))}
-              </select>
+  value={formData.inmueble_id}
+  onChange={(e) => setFormData({ ...formData, inmueble_id: e.target.value })}
+  className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+>
+  <option value="">Seleccionar inmueble</option>
+  {inmuebles?.map((i) => (
+    <option key={i.id} value={i.id}>
+      {estadoIcon(i.estado)} {i.nombre}
+    </option>
+  ))}
+</select>
 
               {/* Indicador visual del estado del inmueble */}
               {formData.inmueble_id && (() => {
