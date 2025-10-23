@@ -52,6 +52,21 @@ export default function Finanzas() {
   const totalIngresos = finanzas.filter(f => f.tipo === 'ingreso').reduce((sum, f) => sum + f.monto, 0);
   const totalGastos = finanzas.filter(f => f.tipo === 'gasto').reduce((sum, f) => sum + f.monto, 0);
 
+const [reformas, setReformas] = useState<any[]>([]);
+
+useEffect(() => {
+  const loadReformas = async () => {
+    const { data, error } = await supabase
+      .from('reformas')
+      .select('id, nombre')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) setReformas(data);
+  };
+
+  loadReformas();
+}, []);
+
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
@@ -132,12 +147,18 @@ export default function Finanzas() {
             </div>
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Proyecto Asociado</label>
-              <input
-                type="text"
-                value={formData.proyecto_asociado}
-                onChange={(e) => setFormData({ ...formData, proyecto_asociado: e.target.value })}
-                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
-              />
+              <select
+  value={formData.proyecto_asociado}
+  onChange={(e) => setFormData({ ...formData, proyecto_asociado: e.target.value })}
+  className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+>
+  <option value="">Seleccionar reforma</option>
+  {reformas.map((r) => (
+    <option key={r.id} value={r.id}>
+      {r.nombre}
+    </option>
+  ))}
+</select>
             </div>
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Forma de Pago</label>

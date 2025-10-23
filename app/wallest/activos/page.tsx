@@ -98,65 +98,86 @@ export default function ActivosInmobiliarios() {
     if (data) setInmuebles(data as Inmueble[]);
   };
 
-  // -------- Guardado
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    // normalizar datos
-    const payload: Partial<Inmueble> = {
-      nombre: formData.nombre.trim(),
-      direccion: formData.direccion.trim() || null,
-      ciudad: formData.ciudad.trim() || null,
-      codigo_postal: formData.codigo_postal.trim() || null,
-      barrio: formData.barrio.trim() || null,
+  try {
+    const limpiarNumero = (v: any) =>
+      v === "" || v === null || v === undefined ? null : Number(v);
+
+    const payload = {
+      nombre: formData.nombre?.trim() || null,
+      direccion: formData.direccion?.trim() || null,
+      ciudad: formData.ciudad?.trim() || null,
+      codigo_postal: formData.codigo_postal?.trim() || null,
+      barrio: formData.barrio?.trim() || null,
       tipo: formData.tipo || null,
-      precio_compra: formData.precio_compra ? parseFloat(formData.precio_compra) : null,
-      precio_venta: formData.precio_venta ? parseFloat(formData.precio_venta) : null,
-      superficie: formData.superficie ? parseFloat(formData.superficie) : null,
-      habitaciones: formData.habitaciones ? parseInt(formData.habitaciones) : null,
-      banos: formData.banos ? parseInt(formData.banos) : null,
-      descripcion: formData.descripcion.trim() || null,
-      estado: formData.estado,
-      updated_at: new Date().toISOString(),
-    };
+      precio_compra: limpiarNumero(formData.precio_compra),
+      precio_venta: limpiarNumero(formData.precio_venta),
+      superficie: limpiarNumero(formData.superficie),
+      habitaciones: limpiarNumero(formData.habitaciones),
+      banos: limpiarNumero(formData.banos),
+      descripcion: formData.descripcion?.trim() || null,
+      estado: formData.estado || "EN_ESTUDIO",
+   };
 
-    // si pasa a COMPRADO y antes no lo estaba → setear fecha_compra
+    // Si estamos editando, actualizar
     if (editingId) {
-      if (estadoOriginal !== 'COMPRADO' && formData.estado === 'COMPRADO') {
-        payload.fecha_compra = new Date().toISOString();
-      }
-      // si sale de COMPRADO, limpiamos fecha_compra
-      if (estadoOriginal === 'COMPRADO' && formData.estado !== 'COMPRADO') {
-        payload.fecha_compra = null;
+      const { error } = await supabase.from("inmuebles").update(payload).eq("id", editingId);
+      if (error) {
+        console.error("❌ Error al actualizar inmueble:", error);
+        alert("Error al actualizar inmueble. Ver consola.");
+        return;
       }
     } else {
-      // alta nueva: nunca seteamos fecha_compra salvo que ya venga en COMPRADO
-      if (formData.estado === 'COMPRADO') {
-        payload.fecha_compra = new Date().toISOString();
+      // Nuevo inmueble
+      const { error } = await supabase.from("inmuebles").insert([payload]);
+      if (error) {
+        console.error("❌ Error al crear inmueble:", error);
+        alert("Error al crear inmueble. Ver consola.");
+        return;
       }
     }
 
+    console.log("✅ Operación exitosa");
+    await loadInmuebles();
+    resetForm();
+  } catch (err) {
+    console.error("❌ Error en handleSubmit:", err);
+    alert("Error inesperado al guardar o actualizar.");
+  }
+};
+    };
+
+    // si cambia a COMPRADO
     if (editingId) {
-      const { error } = await supabase
-        .from('inmuebles')
-        .update(payload)
-        .eq('id', editingId);
-      if (error) {
-        console.error('Error al actualizar inmueble', error);
-        return;
+      if (estadoOriginal !== 'COMPRADO' && formData.estado === 'COMPRADO') {
+        payload['fecha_compra'] = new Date().toISOString();
+      } else if (estadoOriginal === 'COMPRADO' && formData.estado !== 'COMPRADO') {
+        payload['fecha_compra'] = null;
       }
+
+      const { error } = await supabase.from('inmuebles').update(payload).eq('id', editingId);
+      if (error) throw error;
+      console.log('✅ Inmueble actualizado correctamente');
     } else {
-      const { error } = await supabase.from('inmuebles').insert([payload]);
-      if (error) {
-        console.error('Error al crear inmueble', error);
-        return;
+      // nuevo inmueble
+      if (formData.estado === 'COMPRADO') {
+        payload['fecha_compra'] = new Date().toISOString();
       }
+
+      const { error } = await supabase.from('inmuebles').insert([payload]);
+      if (error) throw error;
+      console.log('✅ Nuevo inmueble creado');
     }
 
     await recargar();
     limpiar();
-  };
-
+  } catch (err) {
+    console.error('❌ Error en handleSubmit:', err);
+    alert('Ocurrió un error al guardar o actualizar. Revisa la consola.');
+  }
+};
   // -------- Acciones fila
   const handleEdit = (i: Inmueble) => {
     setEditingId(i.id);
@@ -257,16 +278,7 @@ export default function ActivosInmobiliarios() {
                 onChange={(e) => setFormData({ ...formData, codigo_postal: e.target.value })}
                 className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
               />
-            </div>
-            <div>
-              <label className="block text-sm text-wos-text-muted mb-2">Barrio</label>
-              <input
-                type="text"
-                value={formData.barrio}
-                onChange={(e) => setFormData({ ...formData, barrio: e.target.value })}
-                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
-              />
-            </div>
+           
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Tipo</label>
               <select
