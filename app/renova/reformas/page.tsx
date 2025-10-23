@@ -189,8 +189,6 @@ const estadoColor = (estado?: string) => {
     </div>
   );
 })()}
-            </div>
-
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Nombre *</label>
               <input
