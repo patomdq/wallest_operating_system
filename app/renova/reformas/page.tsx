@@ -19,18 +19,31 @@ export default function ReformasPage() {
     estado: 'pendiente',
   });
 
+  // 🔹 Helper para color según estado del inmueble
+  const estadoColor = (estado?: string) => {
+    switch (estado) {
+      case 'COMPRADO':
+        return 'bg-green-500';
+      case 'ARRAS':
+        return 'bg-orange-500';
+      case 'VENDIDO':
+        return 'bg-blue-500';
+      case 'EN_ESTUDIO':
+      default:
+        return 'bg-yellow-500';
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    // Cargar reformas con información del inmueble
     const { data: ref } = await supabase
       .from('reformas')
       .select('*, inmuebles(nombre, ciudad)')
       .order('created_at', { ascending: false });
 
-    // Cargar inmuebles disponibles
     const { data: inm } = await supabase
       .from('inmuebles')
       .select('*')
@@ -50,14 +63,12 @@ export default function ReformasPage() {
       fecha_inicio: formData.fecha_inicio || null,
       fecha_fin: formData.fecha_fin || null,
       estado: formData.estado,
-      avance: 0, // Se calculará automáticamente con las partidas
+      avance: 0,
     };
 
     if (editingId) {
-      // Actualizar reforma existente
       await supabase.from('reformas').update(dataToSave).eq('id', editingId);
     } else {
-      // Insertar nueva reforma
       await supabase.from('reformas').insert([dataToSave]);
     }
 
@@ -143,54 +154,41 @@ export default function ReformasPage() {
           <h2 className="text-xl font-semibold mb-6 text-wos-accent">
             {editingId ? 'Editar Reforma' : 'Nueva Reforma'}
           </h2>
+
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Inmueble */}
             <div>
-              // Helper (agregarlo arriba del componente o dentro, antes del return)
-const estadoColor = (estado?: string) => {
-  switch (estado) {
-    case 'COMPRADO':
-      return 'bg-green-500';
-    case 'ARRAS':
-      return 'bg-orange-500';
-    case 'VENDIDO':
-      return 'bg-blue-500';
-    case 'EN_ESTUDIO':
-    default:
-      return 'bg-yellow-500';
-  }
-};
+              <label className="block text-sm text-wos-text-muted mb-2">Inmueble *</label>
+              <select
+                value={formData.inmueble_id}
+                onChange={(e) => setFormData({ ...formData, inmueble_id: e.target.value })}
+                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+              >
+                <option value="">Seleccionar inmueble</option>
+                {inmuebles?.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.nombre} — {i.estado?.replace('_', ' ')}
+                  </option>
+                ))}
+              </select>
 
-// --- En el formulario ---
-<label className="block text-sm text-wos-text-muted mb-2">Inmueble *</label>
-<select
-  value={formData.inmueble_id}
-  onChange={(e) => setFormData({ ...formData, inmueble_id: e.target.value })}
-  className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
->
-  <option value="">Seleccionar inmueble</option>
-  {inmuebles?.map((i) => (
-    <option key={i.id} value={i.id}>
-      {i.nombre} — {i.estado?.replace('_', ' ')}
-    </option>
-  ))}
-</select>
+              {/* Indicador visual del estado del inmueble */}
+              {formData.inmueble_id && (() => {
+                const sel = inmuebles.find((x) => x.id === formData.inmueble_id);
+                if (!sel) return null;
+                return (
+                  <div className="mt-2 inline-flex items-center gap-2 px-2 py-1 rounded border border-wos-border">
+                    <span className={`inline-block w-2.5 h-2.5 rounded-full ${estadoColor(sel.estado)}`} />
+                    <span className="text-sm text-wos-text-muted">
+                      {sel.estado?.replace('_', ' ') || 'EN ESTUDIO'}
+                    </span>
+                    <span className="text-sm text-wos-text">· {sel.nombre}</span>
+                  </div>
+                );
+              })()}
+            </div>
 
-{/* Muestra debajo el estado con color */}
-{formData.inmueble_id && (() => {
-  const sel = inmuebles?.find((x) => x.id === formData.inmueble_id);
-  if (!sel) return null;
-  return (
-    <div className="mt-2 inline-flex items-center gap-2 px-2 py-1 rounded border border-wos-border">
-      <span
-        className={`inline-block w-2.5 h-2.5 rounded-full ${estadoColor(sel.estado)}`}
-      />
-      <span className="text-sm text-wos-text-muted">
-        {sel.estado?.replace('_', ' ') || 'EN ESTUDIO'}
-      </span>
-      <span className="text-sm text-wos-text">· {sel.nombre}</span>
-    </div>
-  );
-})()}
+            {/* Nombre */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Nombre *</label>
               <input
@@ -203,6 +201,7 @@ const estadoColor = (estado?: string) => {
               />
             </div>
 
+            {/* Etapa */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Etapa</label>
               <input
@@ -214,6 +213,7 @@ const estadoColor = (estado?: string) => {
               />
             </div>
 
+            {/* Estado */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Estado</label>
               <select
@@ -227,6 +227,7 @@ const estadoColor = (estado?: string) => {
               </select>
             </div>
 
+            {/* Fechas */}
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Fecha Inicio</label>
               <input
