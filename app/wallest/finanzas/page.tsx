@@ -301,14 +301,35 @@ export default function Finanzas() {
                       '-'
                     : '-'}
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => handleDelete(f.id)}
-                    className="p-2 hover:bg-red-500/20 rounded-lg"
-                  >
-                    <Trash2 size={18} className="text-red-500" />
-                  </button>
-                </td>
+               <td className="px-6 py-4 text-right">
+  <div className="flex justify-end gap-2">
+    <button
+      onClick={() => {
+        setShowForm(true);
+        setFormData({
+          concepto: f.concepto,
+          tipo: f.tipo,
+          monto: f.monto.toString(),
+          proyecto_asociado: f.proyecto_asociado || '',
+          fecha: f.fecha,
+          forma_pago: f.forma_pago || '',
+          comentario: f.comentario || '',
+        });
+      }}
+      className="p-2 hover:bg-wos-bg rounded-lg transition-smooth"
+      title="Editar"
+    >
+      <Edit2 size={18} className="text-wos-text-muted" />
+    </button>
+    <button
+      onClick={() => handleDelete(f.id)}
+      className="p-2 hover:bg-red-500/20 rounded-lg transition-smooth"
+      title="Eliminar"
+    >
+      <Trash2 size={18} className="text-red-500" />
+    </button>
+  </div>
+</td>
               </tr>
             ))}
           </tbody>
