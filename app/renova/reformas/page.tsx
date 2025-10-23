@@ -145,20 +145,50 @@ export default function ReformasPage() {
           </h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-wos-text-muted mb-2">Inmueble *</label>
-              <select
-                required
-                value={formData.inmueble_id}
-                onChange={(e) => setFormData({ ...formData, inmueble_id: e.target.value })}
-                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
-              >
-                <option value="">Seleccionar inmueble</option>
-                {inmuebles.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.nombre} {i.ciudad ? `- ${i.ciudad}` : ''}
-                  </option>
-                ))}
-              </select>
+              // Helper (agregarlo arriba del componente o dentro, antes del return)
+const estadoColor = (estado?: string) => {
+  switch (estado) {
+    case 'COMPRADO':
+      return 'bg-green-500';
+    case 'ARRAS':
+      return 'bg-orange-500';
+    case 'VENDIDO':
+      return 'bg-blue-500';
+    case 'EN_ESTUDIO':
+    default:
+      return 'bg-yellow-500';
+  }
+};
+
+// --- En el formulario ---
+<label className="block text-sm text-wos-text-muted mb-2">Inmueble *</label>
+<select
+  value={formData.inmueble_id}
+  onChange={(e) => setFormData({ ...formData, inmueble_id: e.target.value })}
+  className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+>
+  <option value="">Seleccionar inmueble</option>
+  {inmuebles?.map((i) => (
+    <option key={i.id} value={i.id}>
+      {i.nombre} — {i.estado?.replace('_', ' ')}
+    </option>
+  ))}
+</select>
+
+{/* Muestra debajo el estado con color */}
+{formData.inmueble_id && (() => {
+  const sel = inmuebles?.find(x => x.id === formData.inmueble_id);
+  if (!sel) return null;
+  return (
+    <div className="mt-2 inline-flex items-center gap-2 px-2 py-1 rounded border border-wos-border">
+      <span className={`inline-block w-2.5 h-2.5 rounded-full ${estadoColor(sel.estado)}`} />
+      <span className="text-sm text-wos-text-muted">
+        {sel.estado?.replace('_', ' ') || 'EN ESTUDIO'}
+      </span>
+      <span className="text-sm text-wos-text">· {sel.nombre}</span>
+    </div>
+  );
+})()}
             </div>
 
             <div>
