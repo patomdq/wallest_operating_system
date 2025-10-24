@@ -347,13 +347,21 @@ export default function ReformasPage() {
               </div>
             </div>
 
-            {/* Botón para ver partidas */}
-            <Link
-              href="/renova/planificador"
-              className="block w-full bg-wos-accent/10 text-wos-accent px-4 py-2 rounded-lg text-sm text-center hover:bg-wos-accent/20 transition-smooth"
-            >
-              Gestionar Partidas →
-            </Link>
+            {/* Botones */}
+            <div className="space-y-2">
+              <Link
+                href="/renova/planificador"
+                className="block w-full bg-wos-accent/10 text-wos-accent px-4 py-2 rounded-lg text-sm text-center hover:bg-wos-accent/20 transition-smooth"
+              >
+                Gestionar Partidas →
+              </Link>
+              <Link
+                href={`/renova/finanzas-proyecto?reforma_id=${r.id}`}
+                className="block w-full bg-green-500/10 text-green-500 px-4 py-2 rounded-lg text-sm text-center hover:bg-green-500/20 transition-smooth"
+              >
+                Ver Finanzas →
+              </Link>
+            </div>
           </div>
         ))}
       </div>

@@ -185,3 +185,20 @@ export type Comercializacion = {
   created_at?: string;
   updated_at?: string;
 };
+
+export type FinanzaProyecto = {
+  id: string;
+  reforma_id: string;
+  fecha: string;
+  tipo: 'ingreso' | 'gasto';
+  categoria: string;
+  descripcion: string;
+  proveedor: string;
+  cantidad: number;
+  precio_unitario: number;
+  total: number;
+  forma_pago: string;
+  observaciones: string;
+  created_at?: string;
+  updated_at?: string;
+};
