@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS movimientos_empresa (
   proyecto_id UUID REFERENCES reformas(id) ON DELETE SET NULL,
   proveedor TEXT,
   observaciones TEXT,
+  linked_transaction_id UUID,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -20,6 +21,7 @@ CREATE INDEX IF NOT EXISTS idx_movimientos_empresa_tipo ON movimientos_empresa(t
 CREATE INDEX IF NOT EXISTS idx_movimientos_empresa_proyecto_id ON movimientos_empresa(proyecto_id);
 CREATE INDEX IF NOT EXISTS idx_movimientos_empresa_cuenta ON movimientos_empresa(cuenta);
 CREATE INDEX IF NOT EXISTS idx_movimientos_empresa_categoria ON movimientos_empresa(categoria);
+CREATE INDEX IF NOT EXISTS idx_movimientos_empresa_linked_transaction_id ON movimientos_empresa(linked_transaction_id);
 
 -- Habilitar Row Level Security (RLS)
 ALTER TABLE movimientos_empresa ENABLE ROW LEVEL SECURITY;

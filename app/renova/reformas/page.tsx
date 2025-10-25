@@ -45,7 +45,55 @@ export default function ReformasPage() {
       .select('*')
       .order('nombre');
 
-    if (ref) setReformas(ref);
+    // Cargar partidas del planificador (presupuesto planificado)
+    const { data: partidas, error: errorPartidas } = await supabase
+      .from('planificacion_reforma')
+      .select('reforma_id, costo');
+    
+    if (errorPartidas) {
+      console.error('Error al cargar partidas del planificador:', errorPartidas);
+    }
+
+    // Cargar gastos reales de finanzas (presupuesto ejecutado)
+    const { data: finanzas } = await supabase
+      .from('finanzas_proyecto')
+      .select('reforma_id, total, tipo')
+      .eq('tipo', 'gasto');
+
+    // Calcular presupuestos para cada reforma
+    if (ref) {
+      console.log('📊 Total partidas cargadas:', partidas?.length || 0);
+      console.log('📊 Total finanzas cargadas:', finanzas?.length || 0);
+      
+      const reformasConPresupuestos = ref.map(reforma => {
+        // Presupuesto planificado: suma de partidas del planificador
+        const partidasReforma = partidas?.filter(p => p.reforma_id === reforma.id) || [];
+        const presupuestoPlanificado = partidasReforma.reduce((sum, p) => sum + (p.costo || 0), 0);
+
+        // Presupuesto ejecutado: suma de gastos reales en finanzas
+        const finanzasReforma = finanzas?.filter(f => f.reforma_id === reforma.id) || [];
+        const presupuestoEjecutado = finanzasReforma.reduce((sum, f) => sum + (f.total || 0), 0);
+
+        // Calcular desviación porcentual
+        const desviacion = presupuestoPlanificado > 0
+          ? ((presupuestoEjecutado - presupuestoPlanificado) / presupuestoPlanificado) * 100
+          : 0;
+
+        console.log(`📋 ${reforma.nombre}:`);
+        console.log(`  - Partidas: ${partidasReforma.length} | Planificado: €${presupuestoPlanificado}`);
+        console.log(`  - Finanzas: ${finanzasReforma.length} | Ejecutado: €${presupuestoEjecutado}`);
+        console.log(`  - Desviación: ${desviacion.toFixed(1)}%`);
+
+        return {
+          ...reforma,
+          presupuesto_planificado: presupuestoPlanificado,
+          presupuesto_ejecutado: presupuestoEjecutado,
+          desviacion: desviacion
+        };
+      });
+      setReformas(reformasConPresupuestos);
+    }
+    
     if (inm) setInmuebles(inm);
   };
 
@@ -124,6 +172,20 @@ export default function ReformasPage() {
     if (avance >= 50) return 'bg-blue-500';
     if (avance >= 25) return 'bg-yellow-500';
     return 'bg-gray-500';
+  };
+
+  const getDesviacionColor = (desviacion: number) => {
+    const absDesviacion = Math.abs(desviacion);
+    if (absDesviacion < 10) return 'text-green-500';
+    if (absDesviacion <= 20) return 'text-yellow-500';
+    return 'text-red-500';
+  };
+
+  const getDesviacionBgColor = (desviacion: number) => {
+    const absDesviacion = Math.abs(desviacion);
+    if (absDesviacion < 10) return 'bg-green-500/10';
+    if (absDesviacion <= 20) return 'bg-yellow-500/10';
+    return 'bg-red-500/10';
   };
 
   return (
@@ -300,11 +362,34 @@ export default function ReformasPage() {
             </div>
 
             <div className="space-y-3 mb-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-wos-text-muted">Presupuesto Total:</span>
-                <span className="text-sm font-semibold text-wos-accent">
-                  €{r.presupuesto?.toLocaleString() || '0'}
-                </span>
+              {/* Presupuestos y Desviación */}
+              <div className="bg-wos-bg rounded-lg p-3 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-wos-text-muted flex items-center gap-1">
+                    <span>📋</span> Presupuesto Planificado:
+                  </span>
+                  <span className="text-sm font-semibold text-blue-400">
+                    {r.presupuesto_planificado?.toLocaleString('es-ES', { minimumFractionDigits: 0 })} €
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-wos-text-muted flex items-center gap-1">
+                    <span>💰</span> Presupuesto Ejecutado:
+                  </span>
+                  <span className="text-sm font-semibold text-wos-accent">
+                    {r.presupuesto_ejecutado?.toLocaleString('es-ES', { minimumFractionDigits: 0 })} €
+                  </span>
+                </div>
+
+                <div className={`flex justify-between items-center ${getDesviacionBgColor(r.desviacion || 0)} rounded px-2 py-1`}>
+                  <span className="text-xs text-wos-text-muted flex items-center gap-1">
+                    <span>📊</span> Desviación:
+                  </span>
+                  <span className={`text-sm font-bold ${getDesviacionColor(r.desviacion || 0)}`}>
+                    {r.desviacion > 0 ? '+' : ''}{r.desviacion?.toFixed(1)}%
+                  </span>
+                </div>
               </div>
 
               <div className="flex justify-between items-center">

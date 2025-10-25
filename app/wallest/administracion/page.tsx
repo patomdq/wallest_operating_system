@@ -73,6 +73,7 @@ export default function AdministracionPage() {
   const [gastosMes, setGastosMes] = useState(0);
   const [ingresosMes, setIngresosMes] = useState(0);
   const [balanceMes, setBalanceMes] = useState(0);
+  const [saldosPorCuenta, setSaldosPorCuenta] = useState<Record<string, number>>({});
 
   // Filtros
   const [filtroProyecto, setFiltroProyecto] = useState('');
@@ -105,16 +106,30 @@ export default function AdministracionPage() {
       setLoading(true);
 
       // Cargar movimientos
-      const { data: movimientosData } = await supabase
+      console.log('Cargando movimientos desde movimientos_empresa...');
+      const { data: movimientosData, error: errorMovimientos } = await supabase
         .from('movimientos_empresa')
         .select('*')
         .order('fecha', { ascending: false });
 
+      if (errorMovimientos) {
+        console.error('Error al cargar movimientos:', errorMovimientos);
+        alert(`Error al cargar movimientos:\n${errorMovimientos.message}\n\n¿La tabla movimientos_empresa existe en Supabase?`);
+        setLoading(false);
+        return;
+      }
+
+      console.log(`Movimientos cargados: ${movimientosData?.length || 0}`);
+
       // Cargar proyectos
-      const { data: proyectosData } = await supabase
+      const { data: proyectosData, error: errorProyectos } = await supabase
         .from('reformas')
         .select('id, nombre, inmuebles(nombre)')
         .order('nombre');
+
+      if (errorProyectos) {
+        console.error('Error al cargar proyectos:', errorProyectos);
+      }
 
       if (movimientosData) {
         // Enriquecer con nombre de proyecto
@@ -130,8 +145,9 @@ export default function AdministracionPage() {
 
       if (proyectosData) setProyectos(proyectosData);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error cargando datos:', error);
+      alert(`Error crítico al cargar datos:\n${error?.message || 'Error desconocido'}`);
     } finally {
       setLoading(false);
     }
@@ -175,6 +191,16 @@ export default function AdministracionPage() {
     setGastosMes(gastosMesActual);
     setIngresosMes(ingresosMesActual);
     setBalanceMes(ingresosMesActual - gastosMesActual);
+
+    // Calcular saldos por cuenta
+    const saldosCuenta: Record<string, number> = {};
+    movimientos.forEach(m => {
+      if (!saldosCuenta[m.cuenta]) {
+        saldosCuenta[m.cuenta] = 0;
+      }
+      saldosCuenta[m.cuenta] += m.tipo === 'Ingreso' ? m.monto : -m.monto;
+    });
+    setSaldosPorCuenta(saldosCuenta);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -193,42 +219,136 @@ export default function AdministracionPage() {
       observaciones: formData.observaciones || null
     };
 
+    const financiasData = {
+      reforma_id: formData.proyecto_id,
+      fecha: formData.fecha,
+      tipo: formData.tipo.toLowerCase(),
+      categoria: formData.categoria,
+      descripcion: formData.concepto,
+      proveedor: formData.proveedor || '',
+      cantidad: 1,
+      precio_unitario: parseFloat(formData.monto) || 0,
+      total: parseFloat(formData.monto) || 0,
+      forma_pago: formData.forma_pago,
+      observaciones: formData.observaciones || ''
+    };
+
     try {
       if (editingId) {
-        await supabase
+        // Obtener el movimiento anterior para ver si tenía proyecto vinculado
+        const { data: movimientoAnterior, error: errorSelect } = await supabase
+          .from('movimientos_empresa')
+          .select('proyecto_id, concepto')
+          .eq('id', editingId)
+          .single();
+
+        if (errorSelect) {
+          console.error('Error al obtener movimiento anterior:', errorSelect);
+          throw errorSelect;
+        }
+
+        // Actualizar en movimientos_empresa
+        const { error: errorUpdate } = await supabase
           .from('movimientos_empresa')
           .update(dataToSave)
           .eq('id', editingId);
+
+        if (errorUpdate) {
+          console.error('Error al actualizar movimiento:', errorUpdate);
+          throw errorUpdate;
+        }
+
+        // Sincronizar con finanzas_proyecto
+        if (movimientoAnterior?.proyecto_id && formData.proyecto_id) {
+          // Caso 1: Tenía proyecto y sigue teniendo proyecto (pueden ser el mismo o diferente)
+          // Buscar y actualizar/eliminar el registro en finanzas_proyecto
+          const { data: registroFinanzas } = await supabase
+            .from('finanzas_proyecto')
+            .select('id')
+            .eq('reforma_id', movimientoAnterior.proyecto_id)
+            .eq('descripcion', movimientoAnterior.concepto)
+            .single();
+
+          if (registroFinanzas) {
+            if (movimientoAnterior.proyecto_id === formData.proyecto_id) {
+              // Mismo proyecto: actualizar
+              await supabase
+                .from('finanzas_proyecto')
+                .update(financiasData)
+                .eq('id', registroFinanzas.id);
+            } else {
+              // Cambió de proyecto: eliminar el viejo e insertar nuevo
+              await supabase
+                .from('finanzas_proyecto')
+                .delete()
+                .eq('id', registroFinanzas.id);
+              
+              await supabase
+                .from('finanzas_proyecto')
+                .insert([financiasData]);
+            }
+          }
+        } else if (movimientoAnterior?.proyecto_id && !formData.proyecto_id) {
+          // Caso 2: Tenía proyecto pero ya no - eliminar de finanzas_proyecto
+          const { data: registroFinanzas } = await supabase
+            .from('finanzas_proyecto')
+            .select('id')
+            .eq('reforma_id', movimientoAnterior.proyecto_id)
+            .eq('descripcion', movimientoAnterior.concepto)
+            .single();
+
+          if (registroFinanzas) {
+            await supabase
+              .from('finanzas_proyecto')
+              .delete()
+              .eq('id', registroFinanzas.id);
+          }
+        } else if (!movimientoAnterior?.proyecto_id && formData.proyecto_id) {
+          // Caso 3: No tenía proyecto pero ahora sí - crear en finanzas_proyecto
+          await supabase
+            .from('finanzas_proyecto')
+            .insert([financiasData]);
+        }
+        // Caso 4: No tenía proyecto y sigue sin proyecto - no hacer nada
       } else {
-        await supabase
+        // Crear nuevo movimiento
+        console.log('Intentando guardar movimiento:', dataToSave);
+        const { data: movimientoCreado, error: errorInsert } = await supabase
           .from('movimientos_empresa')
-          .insert([dataToSave]);
+          .insert([dataToSave])
+          .select();
+
+        if (errorInsert) {
+          console.error('Error al insertar movimiento:', errorInsert);
+          alert(`Error al guardar el movimiento:\n${errorInsert.message}\n\nDetalles: ${JSON.stringify(errorInsert, null, 2)}`);
+          throw errorInsert;
+        }
+
+        console.log('Movimiento creado exitosamente:', movimientoCreado);
 
         // Si está vinculado a un proyecto, también crear en finanzas_proyecto
         if (formData.proyecto_id) {
-          await supabase
+          const { error: errorFinanzas } = await supabase
             .from('finanzas_proyecto')
-            .insert([{
-              reforma_id: formData.proyecto_id,
-              fecha: formData.fecha,
-              tipo: formData.tipo.toLowerCase(),
-              categoria: formData.categoria,
-              descripcion: formData.concepto,
-              proveedor: formData.proveedor || '',
-              cantidad: 1,
-              precio_unitario: parseFloat(formData.monto) || 0,
-              total: parseFloat(formData.monto) || 0,
-              forma_pago: formData.forma_pago,
-              observaciones: formData.observaciones || ''
-            }]);
+            .insert([financiasData]);
+
+          if (errorFinanzas) {
+            console.error('Error al insertar en finanzas_proyecto:', errorFinanzas);
+            // No bloquear el guardado principal si falla la sincronización
+          }
         }
       }
 
       resetForm();
       loadData();
-    } catch (error) {
+      alert('Movimiento guardado correctamente');
+    } catch (error: any) {
       console.error('Error guardando movimiento:', error);
-      alert('Error al guardar el movimiento');
+      if (error?.message) {
+        alert(`Error al guardar el movimiento:\n${error.message}`);
+      } else {
+        alert('Error desconocido al guardar el movimiento. Verifica la consola del navegador.');
+      }
     }
   };
 
@@ -267,9 +387,43 @@ export default function AdministracionPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('¿Eliminar este movimiento?')) {
-      await supabase.from('movimientos_empresa').delete().eq('id', id);
-      loadData();
+    if (confirm('¿Estás seguro de eliminar este movimiento? Esta acción no se puede deshacer.')) {
+      try {
+        // Obtener el movimiento para ver si está vinculado a un proyecto
+        const { data: movimiento } = await supabase
+          .from('movimientos_empresa')
+          .select('proyecto_id, concepto')
+          .eq('id', id)
+          .single();
+
+        // Eliminar de movimientos_empresa
+        await supabase
+          .from('movimientos_empresa')
+          .delete()
+          .eq('id', id);
+
+        // Si estaba vinculado a un proyecto, también eliminar de finanzas_proyecto
+        if (movimiento?.proyecto_id) {
+          const { data: registroFinanzas } = await supabase
+            .from('finanzas_proyecto')
+            .select('id')
+            .eq('reforma_id', movimiento.proyecto_id)
+            .eq('descripcion', movimiento.concepto)
+            .single();
+
+          if (registroFinanzas) {
+            await supabase
+              .from('finanzas_proyecto')
+              .delete()
+              .eq('id', registroFinanzas.id);
+          }
+        }
+
+        loadData();
+      } catch (error) {
+        console.error('Error eliminando movimiento:', error);
+        alert('Error al eliminar el movimiento');
+      }
     }
   };
 
@@ -280,13 +434,6 @@ export default function AdministracionPage() {
     if (filtroCategoria && m.categoria !== filtroCategoria) return false;
     return true;
   });
-
-  // Calcular saldos por cuenta
-  const saldosPorCuenta = movimientos.reduce((acc, m) => {
-    if (!acc[m.cuenta]) acc[m.cuenta] = 0;
-    acc[m.cuenta] += m.tipo === 'Ingreso' ? m.monto : -m.monto;
-    return acc;
-  }, {} as Record<string, number>);
 
   return (
     <div className="p-8">
