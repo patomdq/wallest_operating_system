@@ -202,3 +202,18 @@ export type FinanzaProyecto = {
   created_at?: string;
   updated_at?: string;
 };
+
+export type MovimientoEmpresa = {
+  id: string;
+  fecha: string;
+  tipo: 'Ingreso' | 'Gasto';
+  categoria: string;
+  concepto: string;
+  monto: number;
+  cuenta: string;
+  forma_pago: string;
+  proyecto_id?: string | null;
+  proveedor?: string | null;
+  observaciones?: string | null;
+  created_at?: string;
+};
