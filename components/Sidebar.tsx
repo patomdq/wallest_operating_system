@@ -23,6 +23,7 @@ import {
   UserPlus,
   TrendingUp,
   FileSignature,
+  Calendar,
 } from 'lucide-react';
 
 type MenuItem = {
@@ -46,6 +47,7 @@ const menuItems: MenuItem[] = [
       { title: 'Dashboard Wallest', path: '/wallest', icon: LayoutDashboard },
       { title: 'Activos Inmobiliarios', path: '/wallest/activos', icon: Home },
       { title: 'Administración', path: '/wallest/administracion', icon: FileText },
+      { title: 'Organizador', path: '/wallest/organizador', icon: Calendar },
       { title: 'Finanzas', path: '/wallest/finanzas', icon: DollarSign },
       { title: 'Recursos Humanos', path: '/wallest/rrhh', icon: UserCircle },
       { title: 'Calculadora de Rentabilidad', path: '/wallest/calculadora', icon: Calculator },

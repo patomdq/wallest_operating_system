@@ -217,3 +217,26 @@ export type MovimientoEmpresa = {
   observaciones?: string | null;
   created_at?: string;
 };
+
+export type EventoGlobal = {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  recordatorio: boolean;
+  reforma_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type TareaGlobal = {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  prioridad: 'Alta' | 'Media' | 'Baja';
+  fecha_limite: string;
+  estado: 'Pendiente' | 'En curso' | 'Completada';
+  created_at?: string;
+  updated_at?: string;
+};
