@@ -21,14 +21,25 @@ export default function ReformasPage() {
 
   // 🔹 Helper para color según estado del inmueble
   const estadoIcon = (estado?: string) => {
-  switch (estado) {
-    case 'COMPRADO':   return '🟢';
-    case 'ARRAS':      return '🟠';
-    case 'VENDIDO':    return '🔵';
-    case 'EN_ESTUDIO':
-    default:           return '🟡';
-  }
-};
+    switch (estado) {
+      case 'COMPRADO':   return '🟢';
+      case 'ARRAS':      return '🟠';
+      case 'VENDIDO':    return '🔵';
+      case 'EN_ESTUDIO':
+      default:           return '🟡';
+    }
+  };
+
+  // 🔹 Helper para color de fondo según estado del inmueble
+  const estadoColor = (estado?: string) => {
+    switch (estado) {
+      case 'COMPRADO':   return 'bg-green-500';
+      case 'ARRAS':      return 'bg-orange-500';
+      case 'VENDIDO':    return 'bg-blue-500';
+      case 'EN_ESTUDIO':
+      default:           return 'bg-yellow-500';
+    }
+  };
 
   useEffect(() => {
     loadData();
