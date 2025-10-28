@@ -140,6 +140,7 @@ export default function AdministracionPage() {
             proyecto_nombre: proyecto ? `${proyecto.nombre} (${proyecto.inmuebles?.nombre})` : null
           };
         });
+        console.log('📋 Actualizando movimientos en estado:', movimientosConProyecto.length, 'movimientos');
         setMovimientos(movimientosConProyecto);
       }
 
@@ -154,6 +155,8 @@ export default function AdministracionPage() {
   };
 
   const calcularKPIs = () => {
+    console.log('🔢 Calculando KPIs con', movimientos.length, 'movimientos');
+    
     // Saldo actual (todos los ingresos - todos los gastos)
     const ingresos = movimientos
       .filter(m => m.tipo === 'Ingreso')
@@ -164,29 +167,40 @@ export default function AdministracionPage() {
       .reduce((sum, m) => sum + m.monto, 0);
     
     setSaldoActual(ingresos - gastos);
+    console.log('💰 Saldo total:', ingresos - gastos, '(Ingresos:', ingresos, '- Gastos:', gastos, ')');
 
     // Gastos e ingresos del mes actual
     const now = new Date();
     const mesActual = now.getMonth();
     const añoActual = now.getFullYear();
 
+    console.log('📅 Mes actual:', mesActual + 1, '/', añoActual);
+
     const gastosMesActual = movimientos
       .filter(m => {
         const fecha = new Date(m.fecha);
-        return m.tipo === 'Gasto' && 
-               fecha.getMonth() === mesActual && 
-               fecha.getFullYear() === añoActual;
+        const esMesActual = fecha.getMonth() === mesActual && fecha.getFullYear() === añoActual;
+        if (m.tipo === 'Gasto' && esMesActual) {
+          console.log('  📉 Gasto del mes:', m.concepto, '-', m.monto, '€', '(Fecha:', m.fecha, ')');
+        }
+        return m.tipo === 'Gasto' && esMesActual;
       })
       .reduce((sum, m) => sum + m.monto, 0);
 
     const ingresosMesActual = movimientos
       .filter(m => {
         const fecha = new Date(m.fecha);
-        return m.tipo === 'Ingreso' && 
-               fecha.getMonth() === mesActual && 
-               fecha.getFullYear() === añoActual;
+        const esMesActual = fecha.getMonth() === mesActual && fecha.getFullYear() === añoActual;
+        if (m.tipo === 'Ingreso' && esMesActual) {
+          console.log('  📈 Ingreso del mes:', m.concepto, '-', m.monto, '€', '(Fecha:', m.fecha, ')');
+        }
+        return m.tipo === 'Ingreso' && esMesActual;
       })
       .reduce((sum, m) => sum + m.monto, 0);
+
+    console.log('📊 Gastos del mes:', gastosMesActual, '€');
+    console.log('📊 Ingresos del mes:', ingresosMesActual, '€');
+    console.log('📊 Balance del mes:', ingresosMesActual - gastosMesActual, '€');
 
     setGastosMes(gastosMesActual);
     setIngresosMes(ingresosMesActual);
@@ -340,7 +354,7 @@ export default function AdministracionPage() {
       }
 
       resetForm();
-      loadData();
+      await loadData(); // Asegurar que se complete la carga antes de continuar
       alert('Movimiento guardado correctamente');
     } catch (error: any) {
       console.error('Error guardando movimiento:', error);
