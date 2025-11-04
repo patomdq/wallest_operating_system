@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { LineChart, DonutChart } from '@/components/Charts';
-import CleanupButton from '@/components/CleanupButton';
 import {
   TrendingUp,
   DollarSign,
@@ -530,11 +529,10 @@ export default function DashboardGeneral() {
           </div>
         </div>
 
-        {/* Acciones rápidas y herramientas */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Acciones rápidas */}
-          <div className="lg:col-span-3 bg-wos-card border border-wos-border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4 text-wos-accent">Acciones Rápidas</h3>
+        {/* Acciones rápidas */}
+        <div className="bg-wos-card border border-wos-border rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4 text-wos-accent text-center">Acciones Rápidas</h3>
+          <div className="max-w-4xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <Link
                 href="/wallest/activos"
@@ -583,14 +581,6 @@ export default function DashboardGeneral() {
                 <TrendingDown size={24} className="text-red-600" />
                 <span className="text-sm font-medium text-wos-text text-center">Admin</span>
               </Link>
-            </div>
-          </div>
-
-          {/* Herramientas de mantenimiento */}
-          <div className="space-y-4">
-            <div className="bg-wos-card border border-wos-border rounded-lg p-4">
-              <h3 className="text-sm font-semibold mb-3 text-wos-accent">Herramientas</h3>
-              <CleanupButton />
             </div>
           </div>
         </div>
