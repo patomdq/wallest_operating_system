@@ -44,7 +44,6 @@ const menuItems: MenuItem[] = [
     icon: Building2,
     path: '/wallest',
     subItems: [
-      { title: 'Dashboard Wallest', path: '/wallest', icon: LayoutDashboard },
       { title: 'Activos Inmobiliarios', path: '/wallest/activos', icon: Home },
       { title: 'Administración', path: '/wallest/administracion', icon: FileText },
       { title: 'Organizador', path: '/wallest/organizador', icon: Calendar },
