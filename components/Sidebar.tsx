@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSidebar } from '@/contexts/SidebarContext';
 import {
   LayoutDashboard,
   Building2,
@@ -80,6 +81,7 @@ const menuItems: MenuItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { isOpen } = useSidebar();
   const [openMenus, setOpenMenus] = useState<string[]>(['WALLest', 'RENOVA', 'NEXO']);
 
   const toggleMenu = (title: string) => {
@@ -94,7 +96,14 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-wos-sidebar border-r border-wos-border flex flex-col h-screen overflow-y-auto">
+    <aside 
+      className={`bg-wos-sidebar border-r border-wos-border flex flex-col h-screen overflow-hidden sidebar-transition z-50 ${
+        isOpen 
+          ? 'w-64 md:w-64 fixed md:relative' 
+          : 'w-0 md:w-0'
+      } md:static`}
+    >
+      <div className={`${isOpen ? 'opacity-100 block' : 'opacity-0 hidden'} transition-opacity duration-300 flex flex-col h-full overflow-y-auto w-64`}>
       {/* Header */}
       <div className="p-6 border-b border-wos-border">
         <h1 className="text-xl font-bold text-wos-accent">WOS 1.0</h1>
@@ -156,9 +165,10 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-wos-border">
-        <p className="text-xs text-wos-text-muted text-center">v1.0.0</p>
+        {/* Footer */}
+        <div className="p-4 border-t border-wos-border">
+          <p className="text-xs text-wos-text-muted text-center">v1.0.0</p>
+        </div>
       </div>
     </aside>
   );

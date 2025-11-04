@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { LineChart, DonutChart } from '@/components/Charts';
+import CleanupButton from '@/components/CleanupButton';
 import {
   TrendingUp,
   DollarSign,
@@ -91,7 +92,7 @@ export default function DashboardGeneral() {
     try {
       setLoading(true);
 
-      // Cargar datos de todas las tablas
+      // Cargar datos de todas las tablas con nombres correctos
       const [
         { data: inmuebles },
         { data: finanzas },
@@ -100,7 +101,8 @@ export default function DashboardGeneral() {
         { data: proyectoRentabilidad },
         { data: comercializacion },
         { data: leads },
-        { data: movimientosEmpresa }
+        { data: movimientosEmpresa },
+        { data: finanzasProyecto }
       ] = await Promise.all([
         supabase.from('inmuebles').select('*'),
         supabase.from('finanzas').select('*'),
@@ -109,14 +111,85 @@ export default function DashboardGeneral() {
         supabase.from('proyecto_rentabilidad').select('*'),
         supabase.from('comercializacion').select('*'),
         supabase.from('leads').select('*'),
-        supabase.from('movimientos_empresa').select('*')
+        supabase.from('movimientos_empresa').select('*'),
+        supabase.from('finanzas_proyecto').select('*')
       ]);
 
-      // Calcular KPIs principales
-      const totalInvertido = (inmuebles || []).reduce((sum: number, i: any) => 
-        sum + (i.precio_compra || 0), 0
+      // 1️⃣ Total Invertido: Solo activos con estado "COMPRADO"
+      const totalInvertido = (inmuebles || [])
+        .filter((i: any) => i.estado === 'COMPRADO')
+        .reduce((sum: number, i: any) => sum + (i.precio_compra || 0), 0);
+
+      // 2️⃣ Beneficio Total: (precio_venta - costo_total) para proyectos finalizados/vendidos
+      let beneficioTotal = 0;
+      const proyectosFinalizados = (reformas || []).filter((r: any) => 
+        r.estado === 'finalizado' || r.estado === 'Finalizado'
       );
 
+      // Calcular beneficio por cada proyecto finalizado
+      for (const reforma of proyectosFinalizados) {
+        // Buscar el inmueble asociado
+        const inmueble = (inmuebles || []).find((i: any) => i.id === reforma.inmueble_id);
+        if (inmueble && inmueble.precio_venta && inmueble.precio_compra) {
+          // Calcular costos totales del proyecto (precio compra + reforma + otros gastos)
+          const costoCompra = inmueble.precio_compra || 0;
+          const costoReforma = reforma.presupuesto_total || 0;
+          
+          // Obtener gastos adicionales del proyecto desde finanzas_proyecto
+          const gastosProyecto = (finanzasProyecto || [])
+            .filter((fp: any) => fp.reforma_id === reforma.id && fp.tipo === 'gasto')
+            .reduce((sum: number, fp: any) => sum + (fp.total || 0), 0);
+          
+          const costoTotal = costoCompra + costoReforma + gastosProyecto;
+          const beneficio = inmueble.precio_venta - costoTotal;
+          beneficioTotal += beneficio;
+        }
+      }
+
+      // 3️⃣ Liquidez: Saldo actual de administración
+      const liquidezDisponible = (administracion || [])
+        .filter((a: any) => a.tipo === 'ingreso')
+        .reduce((sum: number, a: any) => sum + (a.importe || 0), 0) -
+        (administracion || [])
+        .filter((a: any) => a.tipo === 'gasto')
+        .reduce((sum: number, a: any) => sum + (a.importe || 0), 0);
+
+      // 4️⃣ ROI Promedio: Promedio de ROI de proyectos finalizados
+      let roiPromedio = 0;
+      const roisFinalizados: number[] = [];
+      
+      for (const reforma of proyectosFinalizados) {
+        const inmueble = (inmuebles || []).find((i: any) => i.id === reforma.inmueble_id);
+        if (inmueble && inmueble.precio_venta && inmueble.precio_compra) {
+          const costoCompra = inmueble.precio_compra || 0;
+          const costoReforma = reforma.presupuesto_total || 0;
+          const gastosProyecto = (finanzasProyecto || [])
+            .filter((fp: any) => fp.reforma_id === reforma.id && fp.tipo === 'gasto')
+            .reduce((sum: number, fp: any) => sum + (fp.total || 0), 0);
+          
+          const costoTotal = costoCompra + costoReforma + gastosProyecto;
+          if (costoTotal > 0) {
+            const roi = ((inmueble.precio_venta - costoTotal) / costoTotal) * 100;
+            roisFinalizados.push(roi);
+          }
+        }
+      }
+      
+      roiPromedio = roisFinalizados.length > 0 
+        ? roisFinalizados.reduce((sum, roi) => sum + roi, 0) / roisFinalizados.length
+        : 0;
+
+      // 5️⃣ Conteo de proyectos según estado en reformas
+      const proyectosTotales = (reformas || []).length;
+      const proyectosActivos = (reformas || []).filter((r: any) => 
+        r.estado === 'en_proceso' || r.estado === 'En curso' || r.estado === 'pendiente'
+      ).length;
+      const proyectosFinalizadosCount = proyectosFinalizados.length;
+      const proyectosEstudio = (inmuebles || []).filter((i: any) => 
+        i.estado === 'EN_ESTUDIO'
+      ).length;
+
+      // Datos Wallest (basado en finanzas generales)
       const totalIngresos = (finanzas || [])
         .filter((f: any) => f.tipo === 'ingreso')
         .reduce((sum: number, f: any) => sum + (f.monto || 0), 0);
@@ -125,38 +198,7 @@ export default function DashboardGeneral() {
         .filter((f: any) => f.tipo === 'gasto')
         .reduce((sum: number, f: any) => sum + (f.monto || 0), 0);
 
-      const beneficioTotal = totalIngresos - totalGastos;
-
-      const proyectosRoi = (proyectoRentabilidad || [])
-        .filter((p: any) => p.rentabilidad_anualizada_realista)
-        .map((p: any) => p.rentabilidad_anualizada_realista);
-      
-      const roiPromedio = proyectosRoi.length > 0 
-        ? proyectosRoi.reduce((sum: number, roi: number) => sum + roi, 0) / proyectosRoi.length
-        : 0;
-
-      const proyectosTotales = (inmuebles || []).length;
-      const proyectosActivos = (inmuebles || []).filter((i: any) => 
-        i.estado === 'COMPRADO' || i.estado === 'EN_REFORMA'
-      ).length;
-      const proyectosFinalizados = (inmuebles || []).filter((i: any) => 
-        i.estado === 'VENDIDO'
-      ).length;
-      const proyectosEstudio = (inmuebles || []).filter((i: any) => 
-        i.estado === 'EN_ESTUDIO'
-      ).length;
-
-      const liquidezDisponible = (administracion || [])
-        .filter((a: any) => a.tipo === 'ingreso')
-        .reduce((sum: number, a: any) => sum + (a.importe || 0), 0) -
-        (administracion || [])
-        .filter((a: any) => a.tipo === 'gasto')
-        .reduce((sum: number, a: any) => sum + (a.importe || 0), 0);
-
-      // Datos Wallest
-      const wallestIngresos = totalIngresos;
-      const wallestGastos = totalGastos;
-      const balanceMensual = wallestIngresos - wallestGastos;
+      const balanceMensual = totalIngresos - totalGastos;
 
       // Datos Renova
       const renovaReformas = reformas || [];
@@ -172,25 +214,46 @@ export default function DashboardGeneral() {
         c.estado === 'RESERVADO'
       ).length;
 
-      // Evolución mensual (datos de ejemplo basados en datos reales)
-      const currentMonth = new Date().getMonth();
+      // Evolución mensual con datos reales por mes
+      const currentDate = new Date();
       const evolucionMensual = Array.from({ length: 6 }, (_, i) => {
-        const monthIndex = (currentMonth - 5 + i + 12) % 12;
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - 5 + i, 1);
         const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
         
+        // Filtrar ingresos y gastos por mes
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1).toISOString();
+        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59).toISOString();
+        
+        const ingresosDelMes = (finanzas || [])
+          .filter((f: any) => f.tipo === 'ingreso' && f.fecha >= monthStart && f.fecha <= monthEnd)
+          .reduce((sum: number, f: any) => sum + (f.monto || 0), 0);
+          
+        const gastosDelMes = (finanzas || [])
+          .filter((f: any) => f.tipo === 'gasto' && f.fecha >= monthStart && f.fecha <= monthEnd)
+          .reduce((sum: number, f: any) => sum + (f.monto || 0), 0);
+        
         return {
-          month: monthNames[monthIndex],
-          ingresos: totalIngresos * (0.8 + Math.random() * 0.4) / 6,
-          gastos: totalGastos * (0.8 + Math.random() * 0.4) / 6,
+          month: monthNames[date.getMonth()],
+          ingresos: ingresosDelMes,
+          gastos: gastosDelMes,
         };
       });
 
-      // Distribución del capital
+      // Distribución del capital por área real
+      const wallestInversion = (inmuebles || [])
+        .filter((i: any) => i.estado === 'COMPRADO')
+        .reduce((sum: number, i: any) => sum + (i.precio_compra || 0), 0);
+      
+      const renovaInversion = (reformas || [])
+        .reduce((sum: number, r: any) => sum + (r.presupuesto_total || 0), 0);
+      
+      const nexoInversion = Math.max(0, totalInvertido - wallestInversion - renovaInversion);
+
       const distribucionCapital = [
-        { label: 'Wallest', value: totalInvertido * 0.6, color: '#3B82F6' },
-        { label: 'Renova', value: totalInvertido * 0.25, color: '#10B981' },
-        { label: 'Nexo', value: totalInvertido * 0.15, color: '#F59E0B' },
-      ];
+        { label: 'Wallest (Compras)', value: wallestInversion, color: '#3B82F6' },
+        { label: 'Renova (Reformas)', value: renovaInversion, color: '#10B981' },
+        { label: 'Nexo (Comercial)', value: nexoInversion, color: '#F59E0B' },
+      ].filter(item => item.value > 0);
 
       setData({
         totalInvertido,
@@ -198,7 +261,7 @@ export default function DashboardGeneral() {
         roiPromedio,
         proyectosTotales,
         proyectosActivos,
-        proyectosFinalizados,
+        proyectosFinalizados: proyectosFinalizadosCount,
         proyectosEstudio,
         liquidezDisponible,
         wallest: {
@@ -214,7 +277,7 @@ export default function DashboardGeneral() {
         nexo: {
           propiedadesVenta,
           propiedadesReservadas,
-          tasaConversion: 15.2, // Placeholder
+          tasaConversion: propiedadesVenta > 0 ? (propiedadesReservadas / propiedadesVenta) * 100 : 0,
         },
         evolucionMensual,
         distribucionCapital,
@@ -467,57 +530,68 @@ export default function DashboardGeneral() {
           </div>
         </div>
 
-        {/* Acciones rápidas */}
-        <div className="bg-wos-card border border-wos-border rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4 text-wos-accent">Acciones Rápidas</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <Link
-              href="/wallest/activos"
-              className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
-            >
-              <Home size={24} className="text-blue-600" />
-              <span className="text-sm font-medium text-wos-text text-center">Activos</span>
-            </Link>
+        {/* Acciones rápidas y herramientas */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Acciones rápidas */}
+          <div className="lg:col-span-3 bg-wos-card border border-wos-border rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4 text-wos-accent">Acciones Rápidas</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <Link
+                href="/wallest/activos"
+                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+              >
+                <Home size={24} className="text-blue-600" />
+                <span className="text-sm font-medium text-wos-text text-center">Activos</span>
+              </Link>
 
-            <Link
-              href="/wallest/calculadora"
-              className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
-            >
-              <Calculator size={24} className="text-purple-600" />
-              <span className="text-sm font-medium text-wos-text text-center">Calculadora</span>
-            </Link>
+              <Link
+                href="/wallest/calculadora"
+                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+              >
+                <Calculator size={24} className="text-purple-600" />
+                <span className="text-sm font-medium text-wos-text text-center">Calculadora</span>
+              </Link>
 
-            <Link
-              href="/wallest/finanzas"
-              className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
-            >
-              <DollarSign size={24} className="text-green-600" />
-              <span className="text-sm font-medium text-wos-text text-center">Finanzas</span>
-            </Link>
+              <Link
+                href="/wallest/finanzas"
+                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+              >
+                <DollarSign size={24} className="text-green-600" />
+                <span className="text-sm font-medium text-wos-text text-center">Finanzas</span>
+              </Link>
 
-            <Link
-              href="/renova/reformas"
-              className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
-            >
-              <Wrench size={24} className="text-orange-600" />
-              <span className="text-sm font-medium text-wos-text text-center">Reformas</span>
-            </Link>
+              <Link
+                href="/renova/reformas"
+                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+              >
+                <Wrench size={24} className="text-orange-600" />
+                <span className="text-sm font-medium text-wos-text text-center">Reformas</span>
+              </Link>
 
-            <Link
-              href="/nexo/leads"
-              className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
-            >
-              <Users size={24} className="text-indigo-600" />
-              <span className="text-sm font-medium text-wos-text text-center">Leads</span>
-            </Link>
+              <Link
+                href="/nexo/leads"
+                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+              >
+                <Users size={24} className="text-indigo-600" />
+                <span className="text-sm font-medium text-wos-text text-center">Leads</span>
+              </Link>
 
-            <Link
-              href="/wallest/administracion"
-              className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
-            >
-              <TrendingDown size={24} className="text-red-600" />
-              <span className="text-sm font-medium text-wos-text text-center">Admin</span>
-            </Link>
+              <Link
+                href="/wallest/administracion"
+                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+              >
+                <TrendingDown size={24} className="text-red-600" />
+                <span className="text-sm font-medium text-wos-text text-center">Admin</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Herramientas de mantenimiento */}
+          <div className="space-y-4">
+            <div className="bg-wos-card border border-wos-border rounded-lg p-4">
+              <h3 className="text-sm font-semibold mb-3 text-wos-accent">Herramientas</h3>
+              <CleanupButton />
+            </div>
           </div>
         </div>
       </div>

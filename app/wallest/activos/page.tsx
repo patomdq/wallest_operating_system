@@ -164,9 +164,90 @@ const handleSubmit = async (e: React.FormEvent) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar este inmueble?')) return;
-    const { error } = await supabase.from('inmuebles').delete().eq('id', id);
-    if (!error) await recargar();
+    const inmueble = inmuebles.find(i => i.id === id);
+    if (!inmueble) return;
+
+    const confirmMessage = `¿Está seguro de que desea eliminar el inmueble "${inmueble.nombre}"?\n\nEsta acción también eliminará:\n- Reformas asociadas\n- Movimientos financieros relacionados\n- Datos de comercialización\n\nEsta acción no se puede deshacer.`;
+    
+    if (!confirm(confirmMessage)) return;
+
+    try {
+      // 1. Obtener reformas asociadas al inmueble
+      const { data: reformasAsociadas, error: errorReformas } = await supabase
+        .from('reformas')
+        .select('id')
+        .eq('inmueble_id', id);
+
+      if (errorReformas) {
+        console.error('Error al buscar reformas asociadas:', errorReformas);
+        throw new Error('Error al verificar reformas asociadas');
+      }
+
+      // 2. Eliminar datos relacionados en orden
+      if (reformasAsociadas && reformasAsociadas.length > 0) {
+        const reformaIds = reformasAsociadas.map(r => r.id);
+
+        // Eliminar finanzas de proyecto
+        const { error: errorFinanzasProyecto } = await supabase
+          .from('finanzas_proyecto')
+          .delete()
+          .in('reforma_id', reformaIds);
+
+        if (errorFinanzasProyecto) {
+          console.warn('Advertencia al eliminar finanzas de proyecto:', errorFinanzasProyecto);
+        }
+
+        // Eliminar partidas de reforma
+        const { error: errorPartidas } = await supabase
+          .from('partidas_reforma')
+          .delete()
+          .in('reforma_id', reformaIds);
+
+        if (errorPartidas) {
+          console.warn('Advertencia al eliminar partidas de reforma:', errorPartidas);
+        }
+
+        // Eliminar reformas
+        const { error: errorEliminarReformas } = await supabase
+          .from('reformas')
+          .delete()
+          .eq('inmueble_id', id);
+
+        if (errorEliminarReformas) {
+          console.error('Error al eliminar reformas:', errorEliminarReformas);
+          throw new Error('Error al eliminar reformas asociadas');
+        }
+      }
+
+      // 3. Eliminar comercialización
+      const { error: errorComercializacion } = await supabase
+        .from('comercializacion')
+        .delete()
+        .eq('inmueble_id', id);
+
+      if (errorComercializacion) {
+        console.warn('Advertencia al eliminar comercialización:', errorComercializacion);
+      }
+
+      // 4. Finalmente eliminar el inmueble
+      const { error: errorInmueble } = await supabase
+        .from('inmuebles')
+        .delete()
+        .eq('id', id);
+
+      if (errorInmueble) {
+        console.error('Error al eliminar inmueble:', errorInmueble);
+        throw new Error('Error al eliminar el inmueble');
+      }
+
+      // 5. Mostrar mensaje de éxito y recargar
+      alert(`✅ Inmueble "${inmueble.nombre}" eliminado correctamente junto con todos sus datos asociados.`);
+      await recargar();
+
+    } catch (error) {
+      console.error('Error durante la eliminación:', error);
+      alert(`❌ Error al eliminar el inmueble: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
   };
 return (
     <div className="p-8">

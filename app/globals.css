@@ -58,3 +58,18 @@ a {
 .transition-smooth {
   transition: all 0.2s ease-in-out;
 }
+
+/* Transición del sidebar */
+.sidebar-transition {
+  transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+/* Mejoras para el menú hamburguesa */
+.hamburger-menu {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.hamburger-menu:hover {
+  transform: scale(1.05);
+}
