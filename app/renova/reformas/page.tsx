@@ -159,65 +159,82 @@ export default function ReformasPage() {
   };
 
   const handleDelete = async (id: string) => {
+    console.log('🔴 handleDelete llamado para reforma con id:', id);
+    
     const reforma = reformas.find(r => r.id === id);
-    if (!reforma) return;
+    if (!reforma) {
+      console.log('⚠️ Reforma no encontrada');
+      return;
+    }
 
     const inmueble = inmuebles.find(i => i.id === reforma.inmueble_id);
     const inmuebleNombre = inmueble ? inmueble.nombre : 'Inmueble desconocido';
 
     const confirmMessage = `¿Está seguro de que desea eliminar la reforma "${reforma.nombre}" del inmueble "${inmuebleNombre}"?\n\nEsta acción también eliminará:\n- Todas las partidas de la reforma\n- Movimientos financieros del proyecto\n- Imágenes y documentos relacionados\n\nEsta acción no se puede deshacer.`;
     
-    if (!confirm(confirmMessage)) return;
+    console.log('💬 Mostrando confirmación...');
+    if (!confirm(confirmMessage)) {
+      console.log('❌ Usuario canceló la eliminación');
+      return;
+    }
+    
+    console.log('✅ Usuario confirmó, procediendo con eliminación...');
 
     try {
-      // 1. Eliminar finanzas del proyecto
-      const { error: errorFinanzasProyecto } = await supabase
-        .from('finanzas_proyecto')
-        .delete()
-        .eq('reforma_id', id);
-
-      if (errorFinanzasProyecto) {
-        console.warn('Advertencia al eliminar finanzas del proyecto:', errorFinanzasProyecto);
-      }
-
-      // 2. Eliminar partidas de la reforma
-      const { error: errorPartidas } = await supabase
-        .from('partidas_reforma')
-        .delete()
-        .eq('reforma_id', id);
-
-      if (errorPartidas) {
-        console.warn('Advertencia al eliminar partidas de reforma:', errorPartidas);
-      }
-
-      // 3. Eliminar eventos globales relacionados
+      // 1. Eliminar eventos globales relacionados
+      console.log('🗑️ Eliminando eventos globales...');
       const { error: errorEventos } = await supabase
         .from('eventos_globales')
         .delete()
         .eq('reforma_id', id);
 
       if (errorEventos) {
-        console.warn('Advertencia al eliminar eventos relacionados:', errorEventos);
+        console.warn('⚠️ Advertencia al eliminar eventos relacionados:', errorEventos);
+      }
+
+      // 2. Eliminar finanzas del proyecto
+      console.log('🗑️ Eliminando finanzas del proyecto...');
+      const { error: errorFinanzasProyecto } = await supabase
+        .from('finanzas_proyecto')
+        .delete()
+        .eq('reforma_id', id);
+
+      if (errorFinanzasProyecto) {
+        console.warn('⚠️ Advertencia al eliminar finanzas del proyecto:', errorFinanzasProyecto);
+      }
+
+      // 3. Eliminar partidas de la reforma
+      console.log('🗑️ Eliminando partidas de reforma...');
+      const { error: errorPartidas } = await supabase
+        .from('partidas_reforma')
+        .delete()
+        .eq('reforma_id', id);
+
+      if (errorPartidas) {
+        console.warn('⚠️ Advertencia al eliminar partidas de reforma:', errorPartidas);
       }
 
       // 4. Finalmente eliminar la reforma
+      console.log('🗑️ Eliminando reforma...');
       const { error: errorReforma } = await supabase
         .from('reformas')
         .delete()
         .eq('id', id);
 
       if (errorReforma) {
-        console.error('Error al eliminar reforma:', errorReforma);
-        throw new Error('Error al eliminar la reforma');
+        console.error('❌ Error al eliminar reforma:', errorReforma);
+        alert(`❌ Error al eliminar la reforma: ${errorReforma.message}`);
+        return;
       }
 
       // 5. Mostrar mensaje de éxito y recargar
+      console.log('✅ Eliminación completada con éxito');
       alert(`✅ Reforma "${reforma.nombre}" eliminada correctamente junto con todos sus datos asociados.`);
       loadData();
 
-    } catch (error) {
-      console.error('Error durante la eliminación:', error);
-      alert(`❌ Error al eliminar la reforma: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } catch (error: any) {
+      console.error('💥 Error inesperado durante la eliminación:', error);
+      alert(`❌ Error al eliminar la reforma: ${error?.message || 'Error desconocido'}`);
     }
   };
 
@@ -412,14 +429,20 @@ export default function ReformasPage() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleEdit(r)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(r);
+                  }}
                   className="p-1 hover:bg-blue-500/20 rounded transition-smooth"
                   title="Editar reforma"
                 >
                   <Edit2 size={16} className="text-blue-400" />
                 </button>
                 <button
-                  onClick={() => handleDelete(r.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(r.id);
+                  }}
                   className="p-1 hover:bg-red-500/20 rounded transition-smooth"
                   title="Eliminar reforma"
                 >

@@ -164,14 +164,29 @@ const handleSubmit = async (e: React.FormEvent) => {
   };
 
   const handleDelete = async (id: string) => {
+    console.log('🔴 handleDelete llamado con id:', id);
+    
     const inmueble = inmuebles.find(i => i.id === id);
-    if (!inmueble) return;
+    console.log('📍 Inmueble encontrado:', inmueble);
+    
+    if (!inmueble) {
+      console.log('⚠️ Inmueble no encontrado, abortando');
+      return;
+    }
 
     const confirmMessage = `¿Está seguro de que desea eliminar el inmueble "${inmueble.nombre}"?\n\nEsta acción también eliminará:\n- Reformas asociadas\n- Movimientos financieros relacionados\n- Datos de comercialización\n\nEsta acción no se puede deshacer.`;
     
-    if (!confirm(confirmMessage)) return;
+    console.log('💬 Mostrando confirmación...');
+    if (!confirm(confirmMessage)) {
+      console.log('❌ Usuario canceló la eliminación');
+      return;
+    }
+    
+    console.log('✅ Usuario confirmó, procediendo con eliminación...');
 
     try {
+      console.log('🔍 Paso 1: Buscando reformas asociadas...');
+      
       // 1. Obtener reformas asociadas al inmueble
       const { data: reformasAsociadas, error: errorReformas } = await supabase
         .from('reformas')
@@ -179,74 +194,99 @@ const handleSubmit = async (e: React.FormEvent) => {
         .eq('inmueble_id', id);
 
       if (errorReformas) {
-        console.error('Error al buscar reformas asociadas:', errorReformas);
-        throw new Error('Error al verificar reformas asociadas');
+        console.error('❌ Error al buscar reformas asociadas:', errorReformas);
+        alert(`❌ Error al buscar reformas asociadas: ${errorReformas.message}`);
+        return;
       }
+
+      console.log(`📋 Encontradas ${reformasAsociadas?.length || 0} reformas asociadas`);
 
       // 2. Eliminar datos relacionados en orden
       if (reformasAsociadas && reformasAsociadas.length > 0) {
         const reformaIds = reformasAsociadas.map(r => r.id);
+        console.log('🔧 Reformas a eliminar:', reformaIds);
+
+        // Eliminar eventos globales relacionados
+        console.log('🗑️ Eliminando eventos globales...');
+        const { error: errorEventos } = await supabase
+          .from('eventos_globales')
+          .delete()
+          .in('reforma_id', reformaIds);
+
+        if (errorEventos) {
+          console.warn('⚠️ Advertencia al eliminar eventos:', errorEventos);
+        }
 
         // Eliminar finanzas de proyecto
+        console.log('🗑️ Eliminando finanzas de proyecto...');
         const { error: errorFinanzasProyecto } = await supabase
           .from('finanzas_proyecto')
           .delete()
           .in('reforma_id', reformaIds);
 
         if (errorFinanzasProyecto) {
-          console.warn('Advertencia al eliminar finanzas de proyecto:', errorFinanzasProyecto);
+          console.warn('⚠️ Advertencia al eliminar finanzas de proyecto:', errorFinanzasProyecto);
         }
 
         // Eliminar partidas de reforma
+        console.log('🗑️ Eliminando partidas de reforma...');
         const { error: errorPartidas } = await supabase
           .from('partidas_reforma')
           .delete()
           .in('reforma_id', reformaIds);
 
         if (errorPartidas) {
-          console.warn('Advertencia al eliminar partidas de reforma:', errorPartidas);
+          console.warn('⚠️ Advertencia al eliminar partidas de reforma:', errorPartidas);
         }
 
         // Eliminar reformas
+        console.log('🗑️ Eliminando reformas...');
         const { error: errorEliminarReformas } = await supabase
           .from('reformas')
           .delete()
           .eq('inmueble_id', id);
 
         if (errorEliminarReformas) {
-          console.error('Error al eliminar reformas:', errorEliminarReformas);
-          throw new Error('Error al eliminar reformas asociadas');
+          console.error('❌ Error al eliminar reformas:', errorEliminarReformas);
+          alert(`❌ Error al eliminar reformas: ${errorEliminarReformas.message}\n\nPor favor, elimina primero las reformas asociadas manualmente.`);
+          return;
         }
+        
+        console.log('✅ Reformas eliminadas correctamente');
       }
 
       // 3. Eliminar comercialización
+      console.log('🗑️ Eliminando comercialización...');
       const { error: errorComercializacion } = await supabase
         .from('comercializacion')
         .delete()
         .eq('inmueble_id', id);
 
       if (errorComercializacion) {
-        console.warn('Advertencia al eliminar comercialización:', errorComercializacion);
+        console.warn('⚠️ Advertencia al eliminar comercialización:', errorComercializacion);
       }
 
       // 4. Finalmente eliminar el inmueble
+      console.log('🗑️ Eliminando inmueble...');
       const { error: errorInmueble } = await supabase
         .from('inmuebles')
         .delete()
         .eq('id', id);
 
       if (errorInmueble) {
-        console.error('Error al eliminar inmueble:', errorInmueble);
-        throw new Error('Error al eliminar el inmueble');
+        console.error('❌ Error al eliminar inmueble:', errorInmueble);
+        alert(`❌ Error al eliminar el inmueble: ${errorInmueble.message}`);
+        return;
       }
 
       // 5. Mostrar mensaje de éxito y recargar
+      console.log('✅ Eliminación completada con éxito');
       alert(`✅ Inmueble "${inmueble.nombre}" eliminado correctamente junto con todos sus datos asociados.`);
       await recargar();
 
-    } catch (error) {
-      console.error('Error durante la eliminación:', error);
-      alert(`❌ Error al eliminar el inmueble: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } catch (error: any) {
+      console.error('💥 Error inesperado durante la eliminación:', error);
+      alert(`❌ Error al eliminar el inmueble: ${error?.message || 'Error desconocido'}`);
     }
   };
 return (
@@ -467,14 +507,20 @@ return (
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button
-                        onClick={() => handleEdit(i)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(i);
+                        }}
                         className="p-2 hover:bg-wos-bg rounded-lg transition-smooth"
                         title="Editar"
                       >
                         <Edit2 size={18} className="text-wos-text-muted" />
                       </button>
                       <button
-                        onClick={() => handleDelete(i.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(i.id);
+                        }}
                         className="p-2 hover:bg-red-500/20 rounded-lg transition-smooth"
                         title="Eliminar"
                       >

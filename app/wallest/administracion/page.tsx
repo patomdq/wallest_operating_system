@@ -384,6 +384,8 @@ export default function AdministracionPage() {
   };
 
   const handleEdit = (movimiento: MovimientoEmpresa) => {
+    console.log('✏️ handleEdit llamado para movimiento:', movimiento);
+    
     setFormData({
       fecha: movimiento.fecha,
       tipo: movimiento.tipo,
@@ -398,6 +400,10 @@ export default function AdministracionPage() {
     });
     setEditingId(movimiento.id);
     setShowForm(true);
+    
+    console.log('📝 Formulario actualizado con datos del movimiento');
+    console.log('📍 Scrolling hacia arriba...');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: string) => {
@@ -787,14 +793,20 @@ export default function AdministracionPage() {
                     <td className="px-4 py-3">
                       <div className="flex gap-2 justify-center">
                         <button
-                          onClick={() => handleEdit(mov)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(mov);
+                          }}
                           className="text-wos-accent hover:opacity-80"
                           title="Editar"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button
-                          onClick={() => handleDelete(mov.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(mov.id);
+                          }}
                           className="text-red-500 hover:opacity-80"
                           title="Eliminar"
                         >
