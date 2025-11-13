@@ -2,8 +2,9 @@
 
 import { Menu, LogOut } from 'lucide-react';
 import { useSidebar } from '@/contexts/SidebarContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
 
 const getPageTitle = (pathname: string): string => {
   if (pathname === '/') return 'Dashboard General WOS';
@@ -42,9 +43,26 @@ const getPageTitle = (pathname: string): string => {
 
 export default function HeaderBar() {
   const { toggleSidebar, isOpen } = useSidebar();
-  const { signOut, user } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const pageTitle = getPageTitle(pathname);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserEmail(user?.email || null);
+    };
+    
+    getUser();
+  }, []);
+
+  const handleSignOut = async () => {
+    if (confirm('¿Cerrar sesión?')) {
+      await supabase.auth.signOut();
+      router.push('/login');
+    }
+  };
 
   return (
     <header className="bg-wos-card border-b border-wos-border px-4 py-3 flex items-center min-h-[60px]">
@@ -68,19 +86,15 @@ export default function HeaderBar() {
 
       {/* Usuario y cerrar sesión */}
       <div className="flex items-center space-x-3">
-        {user && (
+        {userEmail && (
           <div className="hidden md:block text-right">
-            <p className="text-sm text-wos-text">{user.email}</p>
+            <p className="text-sm text-wos-text">{userEmail}</p>
             <p className="text-xs text-wos-text-muted">Usuario</p>
           </div>
         )}
         
         <button
-          onClick={() => {
-            if (confirm('¿Cerrar sesión?')) {
-              signOut();
-            }
-          }}
+          onClick={handleSignOut}
           className="p-2 rounded-lg hover:bg-wos-bg transition-all duration-200 group"
           title="Cerrar sesión"
         >

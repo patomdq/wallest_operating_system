@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,25 +12,39 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
-  const { signIn, isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
-  // Redirigir si ya está autenticado
+  // Verificar si está montado (para evitar problemas con SSR)
   useEffect(() => {
-    if (!loading && isAuthenticated) {
-      router.push('/');
-    }
-  }, [isAuthenticated, loading, router]);
+    setMounted(true);
+  }, []);
+
+  // Verificar si ya está autenticado
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push('/');
+      }
+    };
+    
+    checkAuth();
+  }, [mounted, router]);
 
   // Cargar credenciales guardadas si "Recordarme" está activado
   useEffect(() => {
+    if (!mounted) return;
+    
     const savedEmail = localStorage.getItem('wos-remember-email');
     if (savedEmail) {
       setEmail(savedEmail);
       setRememberMe(true);
     }
-  }, []);
+  }, [mounted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,33 +52,35 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const result = await signIn(email, password);
-      
-      if (result.error) {
-        setError(result.error);
-      } else {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError('Credenciales incorrectas. Intenta nuevamente.');
+      } else if (data.session) {
         // Guardar email si "Recordarme" está activado
         if (rememberMe) {
           localStorage.setItem('wos-remember-email', email);
         } else {
           localStorage.removeItem('wos-remember-email');
         }
-        // La redirección se maneja automáticamente en el AuthContext
+        
+        // Redirigir al dashboard
+        router.push('/');
       }
     } catch (error) {
+      console.error('Error de login:', error);
       setError('Error de conexión. Intenta nuevamente.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Mostrar loading mientras se verifica la autenticación
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-wos-bg flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-wos-accent border-t-transparent"></div>
-      </div>
-    );
+  // No renderizar nada hasta que esté montado
+  if (!mounted) {
+    return null;
   }
 
   return (
@@ -180,16 +196,16 @@ export default function LoginPage() {
                 <span className="ml-2 text-wos-text-muted">Recordarme</span>
               </label>
 
-              <button
-                type="button"
+              <a
+                href="#"
                 className="text-wos-accent hover:text-wos-accent/80 transition-colors"
-                onClick={() => {
-                  // TODO: Implementar recuperación de contraseña
-                  alert('Función de recuperación de contraseña próximamente disponible.');
+                onClick={(e) => {
+                  e.preventDefault();
+                  alert('Para recuperar tu contraseña, contacta al administrador del sistema.');
                 }}
               >
                 ¿Olvidaste tu contraseña?
-              </button>
+              </a>
             </div>
           </form>
         </div>

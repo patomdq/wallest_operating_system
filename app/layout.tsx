@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { SidebarProvider } from '@/contexts/SidebarContext'
-import { AuthProvider } from '@/contexts/AuthContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
 
 export const metadata: Metadata = {
@@ -17,13 +16,11 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="bg-wos-bg text-wos-text">
-        <AuthProvider>
-          <SidebarProvider>
-            <LayoutWrapper>
-              {children}
-            </LayoutWrapper>
-          </SidebarProvider>
-        </AuthProvider>
+        <SidebarProvider>
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
+        </SidebarProvider>
       </body>
     </html>
   )
