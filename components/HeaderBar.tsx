@@ -1,7 +1,8 @@
 'use client';
 
-import { Menu } from 'lucide-react';
+import { Menu, LogOut } from 'lucide-react';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePathname } from 'next/navigation';
 
 const getPageTitle = (pathname: string): string => {
@@ -41,6 +42,7 @@ const getPageTitle = (pathname: string): string => {
 
 export default function HeaderBar() {
   const { toggleSidebar, isOpen } = useSidebar();
+  const { signOut, user } = useAuth();
   const pathname = usePathname();
   const pageTitle = getPageTitle(pathname);
 
@@ -64,9 +66,26 @@ export default function HeaderBar() {
         )}
       </div>
 
-      {/* Espacio para futuras funcionalidades como usuario, notificaciones, etc. */}
-      <div className="flex items-center space-x-2">
-        {/* Placeholder para funcionalidades futuras */}
+      {/* Usuario y cerrar sesión */}
+      <div className="flex items-center space-x-3">
+        {user && (
+          <div className="hidden md:block text-right">
+            <p className="text-sm text-wos-text">{user.email}</p>
+            <p className="text-xs text-wos-text-muted">Usuario</p>
+          </div>
+        )}
+        
+        <button
+          onClick={() => {
+            if (confirm('¿Cerrar sesión?')) {
+              signOut();
+            }
+          }}
+          className="p-2 rounded-lg hover:bg-wos-bg transition-all duration-200 group"
+          title="Cerrar sesión"
+        >
+          <LogOut size={20} className="text-wos-text-muted group-hover:text-red-500 transition-colors" />
+        </button>
       </div>
     </header>
   );

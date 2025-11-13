@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import Sidebar from '@/components/Sidebar'
-import HeaderBar from '@/components/HeaderBar'
-import SidebarOverlay from '@/components/SidebarOverlay'
 import { SidebarProvider } from '@/contexts/SidebarContext'
+import { AuthProvider } from '@/contexts/AuthContext'
+import LayoutWrapper from '@/components/LayoutWrapper'
 
 export const metadata: Metadata = {
   title: 'WOS 1.0 - Wallest Operating System',
@@ -18,21 +17,13 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="bg-wos-bg text-wos-text">
-        <SidebarProvider>
-          <div className="flex h-screen overflow-hidden relative">
-            <Sidebar />
-            
-            {/* Overlay para móvil */}
-            <SidebarOverlay />
-            
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <HeaderBar />
-              <main className="flex-1 overflow-y-auto">
-                {children}
-              </main>
-            </div>
-          </div>
-        </SidebarProvider>
+        <AuthProvider>
+          <SidebarProvider>
+            <LayoutWrapper>
+              {children}
+            </LayoutWrapper>
+          </SidebarProvider>
+        </AuthProvider>
       </body>
     </html>
   )
