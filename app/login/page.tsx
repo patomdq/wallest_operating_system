@@ -89,10 +89,10 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center">
           <div className="mb-6">
-            <h1 className="text-6xl font-bold text-wos-accent tracking-wider">
+            <h1 className="text-6xl font-bold text-blue-500 tracking-wider">
               WOS
             </h1>
-            <p className="text-wos-text-muted text-lg mt-2">
+            <p className="text-gray-400 text-lg mt-2">
               Wallest Operating System
             </p>
           </div>
@@ -170,38 +170,38 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-wos-accent hover:bg-wos-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-wos-accent focus:ring-offset-wos-bg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full flex justify-center items-center py-3 px-4 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
             >
               {isLoading ? (
-                <div className="flex items-center">
+                <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                  Iniciando sesión...
-                </div>
+                  <span>Iniciando sesión...</span>
+                </>
               ) : (
-                'Iniciar sesión'
+                <span>Iniciar sesión</span>
               )}
             </button>
 
             {/* Remember Me and Forgot Password */}
             <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center">
+              <label className="flex items-center cursor-pointer">
                 <input
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-wos-accent focus:ring-wos-accent border-wos-border rounded bg-wos-bg"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-700 cursor-pointer"
                 />
-                <span className="ml-2 text-wos-text-muted">Recordarme</span>
+                <span className="ml-2 text-gray-400">Recordarme</span>
               </label>
 
               <a
                 href="#"
-                className="text-wos-accent hover:text-wos-accent/80 transition-colors"
+                className="text-blue-500 hover:text-blue-400 transition-colors"
                 onClick={(e) => {
                   e.preventDefault();
-                  alert('Para recuperar tu contraseña, contacta al administrador del sistema.');
+                  alert('Para recuperar tu contraseña, contacta al administrador del sistema.\n\nEmail: patricio@wallest.pro');
                 }}
               >
                 ¿Olvidaste tu contraseña?
@@ -210,13 +210,28 @@ export default function LoginPage() {
           </form>
         </div>
 
+        {/* Register Section */}
+        <div className="bg-wos-card border border-wos-border rounded-xl p-6 text-center">
+          <p className="text-wos-text-muted text-sm mb-3">
+            ¿No tienes una cuenta?
+          </p>
+          <button
+            onClick={() => {
+              alert('Para crear una cuenta, contacta al administrador del sistema.\n\nEmail: patricio@wallest.pro');
+            }}
+            className="w-full py-2.5 px-4 text-sm font-medium rounded-lg text-blue-500 bg-transparent border border-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200"
+          >
+            Solicitar acceso
+          </button>
+        </div>
+
         {/* Footer */}
         <div className="text-center">
           <p className="text-wos-text-muted text-sm">
             Desarrollado por{' '}
-            <span className="font-medium text-wos-accent">Berciamedia</span>{' '}
+            <span className="font-medium text-blue-500">Berciamedia</span>{' '}
             para{' '}
-            <span className="font-medium text-wos-accent">Hasu SL</span>
+            <span className="font-medium text-blue-500">Hasu SL</span>
           </p>
         </div>
       </div>
