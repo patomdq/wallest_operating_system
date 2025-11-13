@@ -6,6 +6,7 @@ import LayoutWrapper from '@/components/LayoutWrapper'
 export const metadata: Metadata = {
   title: 'WOS 1.0 - Wallest Operating System',
   description: 'Sistema operativo para gestión inmobiliaria integral',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 }
 
 export default function RootLayout({

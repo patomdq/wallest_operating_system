@@ -299,18 +299,18 @@ export default function DashboardGeneral() {
   return (
     <div className="min-h-screen bg-wos-bg">
       {/* Header */}
-      <div className="bg-wos-card border-b border-wos-border p-6">
+      <div className="bg-wos-card border-b border-wos-border p-4 md:p-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-wos-accent mb-2">
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-wos-accent mb-2">
             Dashboard General WOS
           </h1>
-          <p className="text-wos-text-muted">
+          <p className="text-sm md:text-base text-wos-text-muted">
             Resumen integral de operaciones, rentabilidad y rendimiento de la compañía
           </p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-3 md:p-4 lg:p-6 space-y-4 md:space-y-6">
         {/* KPIs Principales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-wos-card border border-wos-border rounded-lg p-4">
@@ -386,34 +386,34 @@ export default function DashboardGeneral() {
         </div>
 
         {/* Bloques por área */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Wallest */}
-          <div className="bg-wos-card border border-wos-border rounded-lg p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Building2 size={24} className="text-blue-600" />
+          <div className="bg-wos-card border border-wos-border rounded-lg p-4 md:p-6">
+            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <div className="p-1.5 md:p-2 bg-blue-50 rounded-lg flex-shrink-0">
+                <Building2 size={20} className="text-blue-600 md:w-6 md:h-6" />
               </div>
-              <h3 className="text-lg font-bold text-blue-600">🔸 Wallest</h3>
+              <h3 className="text-base md:text-lg font-bold text-blue-600">🔸 Wallest</h3>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <div>
-                <p className="text-sm text-wos-text-muted mb-1">Balance mensual</p>
-                <p className="text-2xl font-bold text-wos-accent">
+                <p className="text-xs md:text-sm text-wos-text-muted mb-1">Balance mensual</p>
+                <p className="text-xl md:text-2xl font-bold text-wos-accent">
                   €{(data.wallest.balanceMensual / 1000).toFixed(0)}k
                 </p>
               </div>
               
               <div>
-                <p className="text-sm text-wos-text-muted mb-1">Proyección mensual</p>
-                <p className="text-lg font-semibold text-green-500">
+                <p className="text-xs md:text-sm text-wos-text-muted mb-1">Proyección mensual</p>
+                <p className="text-base md:text-lg font-semibold text-green-500">
                   €{(data.wallest.proyeccionMensual / 1000).toFixed(0)}k
                 </p>
               </div>
               
               <div>
-                <p className="text-sm text-wos-text-muted mb-1">Gastos fijos principales</p>
-                <p className="text-lg font-semibold text-red-500">
+                <p className="text-xs md:text-sm text-wos-text-muted mb-1">Gastos fijos principales</p>
+                <p className="text-base md:text-lg font-semibold text-red-500">
                   €{(data.wallest.gastosFijos / 1000).toFixed(0)}k
                 </p>
               </div>
@@ -428,32 +428,32 @@ export default function DashboardGeneral() {
           </div>
 
           {/* Renova */}
-          <div className="bg-wos-card border border-wos-border rounded-lg p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-green-50 rounded-lg">
-                <Wrench size={24} className="text-green-600" />
+          <div className="bg-wos-card border border-wos-border rounded-lg p-4 md:p-6">
+            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <div className="p-1.5 md:p-2 bg-green-50 rounded-lg flex-shrink-0">
+                <Wrench size={20} className="text-green-600 md:w-6 md:h-6" />
               </div>
-              <h3 className="text-lg font-bold text-green-600">🔸 Renova</h3>
+              <h3 className="text-base md:text-lg font-bold text-green-600">🔸 Renova</h3>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <div>
-                <p className="text-sm text-wos-text-muted mb-1">Rentabilidad media</p>
-                <p className="text-2xl font-bold text-wos-accent">
+                <p className="text-xs md:text-sm text-wos-text-muted mb-1">Rentabilidad media</p>
+                <p className="text-xl md:text-2xl font-bold text-wos-accent">
                   {data.renova.rentabilidadMedia.toFixed(1)}%
                 </p>
               </div>
               
               <div>
-                <p className="text-sm text-wos-text-muted mb-1">Avance promedio obras</p>
-                <p className="text-lg font-semibold text-blue-500">
+                <p className="text-xs md:text-sm text-wos-text-muted mb-1">Avance promedio obras</p>
+                <p className="text-base md:text-lg font-semibold text-blue-500">
                   {data.renova.avancePromedio.toFixed(1)}%
                 </p>
               </div>
               
               <div>
-                <p className="text-sm text-wos-text-muted mb-1">ROI estimado activos</p>
-                <p className="text-lg font-semibold text-green-500">
+                <p className="text-xs md:text-sm text-wos-text-muted mb-1">ROI estimado activos</p>
+                <p className="text-base md:text-lg font-semibold text-green-500">
                   {data.renova.roiEstimado.toFixed(1)}%
                 </p>
               </div>
@@ -468,28 +468,28 @@ export default function DashboardGeneral() {
           </div>
 
           {/* Nexo */}
-          <div className="bg-wos-card border border-wos-border rounded-lg p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <Users size={24} className="text-orange-600" />
+          <div className="bg-wos-card border border-wos-border rounded-lg p-4 md:p-6">
+            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <div className="p-1.5 md:p-2 bg-orange-50 rounded-lg flex-shrink-0">
+                <Users size={20} className="text-orange-600 md:w-6 md:h-6" />
               </div>
-              <h3 className="text-lg font-bold text-orange-600">🔸 Nexo</h3>
+              <h3 className="text-base md:text-lg font-bold text-orange-600">🔸 Nexo</h3>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <div>
-                <p className="text-sm text-wos-text-muted mb-1">Propiedades en venta</p>
-                <p className="text-2xl font-bold text-wos-accent">{data.nexo.propiedadesVenta}</p>
+                <p className="text-xs md:text-sm text-wos-text-muted mb-1">Propiedades en venta</p>
+                <p className="text-xl md:text-2xl font-bold text-wos-accent">{data.nexo.propiedadesVenta}</p>
               </div>
               
               <div>
-                <p className="text-sm text-wos-text-muted mb-1">Propiedades reservadas</p>
-                <p className="text-lg font-semibold text-blue-500">{data.nexo.propiedadesReservadas}</p>
+                <p className="text-xs md:text-sm text-wos-text-muted mb-1">Propiedades reservadas</p>
+                <p className="text-base md:text-lg font-semibold text-blue-500">{data.nexo.propiedadesReservadas}</p>
               </div>
               
               <div>
-                <p className="text-sm text-wos-text-muted mb-1">Tasa de conversión</p>
-                <p className="text-lg font-semibold text-green-500">
+                <p className="text-xs md:text-sm text-wos-text-muted mb-1">Tasa de conversión</p>
+                <p className="text-base md:text-lg font-semibold text-green-500">
                   {data.nexo.tasaConversion}%
                 </p>
               </div>
@@ -505,81 +505,85 @@ export default function DashboardGeneral() {
         </div>
 
         {/* Gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Evolución mensual */}
-          <div className="bg-wos-card border border-wos-border rounded-lg p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <BarChart3 size={20} className="text-wos-accent" />
-              <h3 className="text-lg font-semibold text-wos-accent">
-                📊 Evolución Mensual de Ingresos y Gastos
+          <div className="bg-wos-card border border-wos-border rounded-lg p-4 md:p-6">
+            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <BarChart3 size={18} className="text-wos-accent flex-shrink-0 md:w-5 md:h-5" />
+              <h3 className="text-sm md:text-base lg:text-lg font-semibold text-wos-accent">
+                📊 Evolución Mensual
               </h3>
             </div>
-            <LineChart data={data.evolucionMensual} height={250} />
+            <div className="overflow-x-auto">
+              <LineChart data={data.evolucionMensual} height={250} />
+            </div>
           </div>
 
           {/* Distribución del capital */}
-          <div className="bg-wos-card border border-wos-border rounded-lg p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <PieChart size={20} className="text-wos-accent" />
-              <h3 className="text-lg font-semibold text-wos-accent">
-                🧩 Distribución del Capital por Proyectos
+          <div className="bg-wos-card border border-wos-border rounded-lg p-4 md:p-6">
+            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <PieChart size={18} className="text-wos-accent flex-shrink-0 md:w-5 md:h-5" />
+              <h3 className="text-sm md:text-base lg:text-lg font-semibold text-wos-accent">
+                🧩 Distribución del Capital
               </h3>
             </div>
-            <DonutChart data={data.distribucionCapital} height={250} />
+            <div className="overflow-x-auto">
+              <DonutChart data={data.distribucionCapital} height={250} />
+            </div>
           </div>
         </div>
 
         {/* Acciones rápidas */}
-        <div className="bg-wos-card border border-wos-border rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4 text-wos-accent text-center">Acciones Rápidas</h3>
+        <div className="bg-wos-card border border-wos-border rounded-lg p-4 md:p-6">
+          <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4 text-wos-accent text-center">Acciones Rápidas</h3>
           <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
               <Link
                 href="/wallest/activos"
-                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+                className="flex flex-col items-center gap-1.5 md:gap-2 p-3 md:p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
               >
-                <Home size={24} className="text-blue-600" />
-                <span className="text-sm font-medium text-wos-text text-center">Activos</span>
+                <Home size={20} className="text-blue-600 md:w-6 md:h-6" />
+                <span className="text-xs md:text-sm font-medium text-wos-text text-center">Activos</span>
               </Link>
 
               <Link
                 href="/wallest/calculadora"
-                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+                className="flex flex-col items-center gap-1.5 md:gap-2 p-3 md:p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
               >
-                <Calculator size={24} className="text-purple-600" />
-                <span className="text-sm font-medium text-wos-text text-center">Calculadora</span>
+                <Calculator size={20} className="text-purple-600 md:w-6 md:h-6" />
+                <span className="text-xs md:text-sm font-medium text-wos-text text-center">Calculadora</span>
               </Link>
 
               <Link
                 href="/wallest/finanzas"
-                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+                className="flex flex-col items-center gap-1.5 md:gap-2 p-3 md:p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
               >
-                <DollarSign size={24} className="text-green-600" />
-                <span className="text-sm font-medium text-wos-text text-center">Finanzas</span>
+                <DollarSign size={20} className="text-green-600 md:w-6 md:h-6" />
+                <span className="text-xs md:text-sm font-medium text-wos-text text-center">Finanzas</span>
               </Link>
 
               <Link
                 href="/renova/reformas"
-                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+                className="flex flex-col items-center gap-1.5 md:gap-2 p-3 md:p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
               >
-                <Wrench size={24} className="text-orange-600" />
-                <span className="text-sm font-medium text-wos-text text-center">Reformas</span>
+                <Wrench size={20} className="text-orange-600 md:w-6 md:h-6" />
+                <span className="text-xs md:text-sm font-medium text-wos-text text-center">Reformas</span>
               </Link>
 
               <Link
                 href="/nexo/leads"
-                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+                className="flex flex-col items-center gap-1.5 md:gap-2 p-3 md:p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
               >
-                <Users size={24} className="text-indigo-600" />
-                <span className="text-sm font-medium text-wos-text text-center">Leads</span>
+                <Users size={20} className="text-indigo-600 md:w-6 md:h-6" />
+                <span className="text-xs md:text-sm font-medium text-wos-text text-center">Leads</span>
               </Link>
 
               <Link
                 href="/wallest/administracion"
-                className="flex flex-col items-center gap-2 p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
+                className="flex flex-col items-center gap-1.5 md:gap-2 p-3 md:p-4 bg-wos-bg rounded-lg hover:bg-wos-border transition-colors"
               >
-                <TrendingDown size={24} className="text-red-600" />
-                <span className="text-sm font-medium text-wos-text text-center">Admin</span>
+                <TrendingDown size={20} className="text-red-600 md:w-6 md:h-6" />
+                <span className="text-xs md:text-sm font-medium text-wos-text text-center">Admin</span>
               </Link>
             </div>
           </div>

@@ -89,7 +89,7 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center">
           <div className="mb-6">
-            <h1 className="text-6xl font-bold text-blue-500 tracking-wider">
+            <h1 className="text-6xl font-black text-white tracking-wider">
               WOS
             </h1>
             <p className="text-gray-400 text-lg mt-2">

@@ -65,30 +65,30 @@ export default function HeaderBar() {
   };
 
   return (
-    <header className="bg-wos-card border-b border-wos-border px-4 py-3 flex items-center min-h-[60px]">
+    <header className="bg-wos-card border-b border-wos-border px-3 md:px-4 py-3 flex items-center min-h-[60px]">
       <button
         onClick={toggleSidebar}
-        className="hamburger-menu p-2 rounded-lg hover:bg-wos-bg transition-all duration-200"
+        className="hamburger-menu p-2 rounded-lg hover:bg-wos-bg transition-all duration-200 flex-shrink-0"
         aria-label={isOpen ? "Ocultar menú lateral" : "Mostrar menú lateral"}
         title={isOpen ? "Ocultar menú lateral" : "Mostrar menú lateral"}
       >
         <Menu size={20} className="text-wos-text-muted hover:text-wos-accent transition-colors duration-200" />
       </button>
       
-      <div className="ml-4 flex-1">
-        <h1 className="text-lg font-semibold text-wos-accent truncate">
+      <div className="ml-2 md:ml-4 flex-1 min-w-0">
+        <h1 className="text-sm md:text-lg font-semibold text-wos-accent truncate">
           {pageTitle}
         </h1>
         {pageTitle !== 'Dashboard General WOS' && (
-          <p className="text-xs text-wos-text-muted">Wallest Operating System</p>
+          <p className="text-xs text-wos-text-muted hidden sm:block">Wallest Operating System</p>
         )}
       </div>
 
       {/* Usuario y cerrar sesión */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-1 md:space-x-3 flex-shrink-0">
         {userEmail && (
-          <div className="hidden md:block text-right">
-            <p className="text-sm text-wos-text">{userEmail}</p>
+          <div className="hidden lg:block text-right max-w-[200px]">
+            <p className="text-sm text-wos-text truncate">{userEmail}</p>
             <p className="text-xs text-wos-text-muted">Usuario</p>
           </div>
         )}
@@ -98,7 +98,7 @@ export default function HeaderBar() {
           className="p-2 rounded-lg hover:bg-wos-bg transition-all duration-200 group"
           title="Cerrar sesión"
         >
-          <LogOut size={20} className="text-wos-text-muted group-hover:text-red-500 transition-colors" />
+          <LogOut size={18} className="text-wos-text-muted group-hover:text-red-500 transition-colors md:w-5 md:h-5" />
         </button>
       </div>
     </header>
