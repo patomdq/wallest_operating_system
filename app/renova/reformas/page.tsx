@@ -192,7 +192,18 @@ export default function ReformasPage() {
         console.warn('⚠️ Advertencia al eliminar eventos relacionados:', errorEventos);
       }
 
-      // 2. Eliminar finanzas del proyecto
+      // 2. Eliminar tabla finanzas (con columna proyecto_asociado)
+      console.log('🗑️ Eliminando registros de finanzas...');
+      const { error: errorFinanzas } = await supabase
+        .from('finanzas')
+        .delete()
+        .eq('proyecto_asociado', id);
+
+      if (errorFinanzas) {
+        console.warn('⚠️ Advertencia al eliminar finanzas:', errorFinanzas);
+      }
+
+      // 3. Eliminar finanzas del proyecto
       console.log('🗑️ Eliminando finanzas del proyecto...');
       const { error: errorFinanzasProyecto } = await supabase
         .from('finanzas_proyecto')
@@ -203,7 +214,7 @@ export default function ReformasPage() {
         console.warn('⚠️ Advertencia al eliminar finanzas del proyecto:', errorFinanzasProyecto);
       }
 
-      // 3. Eliminar partidas de la reforma
+      // 4. Eliminar partidas de la reforma
       console.log('🗑️ Eliminando partidas de reforma...');
       const { error: errorPartidas } = await supabase
         .from('partidas_reforma')
@@ -214,7 +225,7 @@ export default function ReformasPage() {
         console.warn('⚠️ Advertencia al eliminar partidas de reforma:', errorPartidas);
       }
 
-      // 4. Finalmente eliminar la reforma
+      // 5. Finalmente eliminar la reforma
       console.log('🗑️ Eliminando reforma...');
       const { error: errorReforma } = await supabase
         .from('reformas')
@@ -227,7 +238,7 @@ export default function ReformasPage() {
         return;
       }
 
-      // 5. Mostrar mensaje de éxito y recargar
+      // 6. Mostrar mensaje de éxito y recargar
       console.log('✅ Eliminación completada con éxito');
       alert(`✅ Reforma "${reforma.nombre}" eliminada correctamente junto con todos sus datos asociados.`);
       loadData();

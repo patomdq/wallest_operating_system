@@ -217,6 +217,17 @@ const handleSubmit = async (e: React.FormEvent) => {
           console.warn('⚠️ Advertencia al eliminar eventos:', errorEventos);
         }
 
+        // Eliminar tabla finanzas (con columna proyecto_asociado)
+        console.log('🗑️ Eliminando registros de finanzas...');
+        const { error: errorFinanzas } = await supabase
+          .from('finanzas')
+          .delete()
+          .in('proyecto_asociado', reformaIds);
+
+        if (errorFinanzas) {
+          console.warn('⚠️ Advertencia al eliminar finanzas:', errorFinanzas);
+        }
+
         // Eliminar finanzas de proyecto
         console.log('🗑️ Eliminando finanzas de proyecto...');
         const { error: errorFinanzasProyecto } = await supabase
