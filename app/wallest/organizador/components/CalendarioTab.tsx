@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, EventoGlobal, Reforma } from '@/lib/supabase';
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Edit2, X } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Edit2, X, RefreshCw, CheckCircle, XCircle, Cloud } from 'lucide-react';
+import {
+  getGoogleAuthUrl,
+  getSyncStatus,
+  syncEventToGoogle,
+  syncEventsFromGoogle,
+  disconnectGoogleCalendar,
+  unsyncEvent,
+  SyncStatus
+} from '@/lib/googleCalendar';
+import { useSearchParams } from 'next/navigation';
 
 type ViewMode = 'month' | 'week' | 'day';
 
 export default function CalendarioTab() {
+  const searchParams = useSearchParams();
   const [eventos, setEventos] = useState<EventoGlobal[]>([]);
   const [reformas, setReformas] = useState<Reforma[]>([]);
   const [loading, setLoading] = useState(true);
@@ -14,6 +25,11 @@ export default function CalendarioTab() {
   const [editingEvento, setEditingEvento] = useState<EventoGlobal | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Estados de Google Calendar
+  const [googleSyncStatus, setGoogleSyncStatus] = useState<SyncStatus | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [showGooglePanel, setShowGooglePanel] = useState(false);
 
   // Estados del formulario
   const [formData, setFormData] = useState({
@@ -28,7 +44,19 @@ export default function CalendarioTab() {
   useEffect(() => {
     loadEventos();
     loadReformas();
-  }, []);
+    loadGoogleSyncStatus();
+    
+    // Verificar si viene de una conexión exitosa
+    const googleConnected = searchParams?.get('google_connected');
+    const googleError = searchParams?.get('google_error');
+    
+    if (googleConnected === 'true') {
+      alert('✅ Google Calendar conectado correctamente. Sincronizando eventos...');
+      handleSyncFromGoogle();
+    } else if (googleError) {
+      alert(`❌ Error al conectar con Google Calendar: ${googleError}`);
+    }
+  }, [searchParams]);
 
   const loadEventos = async () => {
     try {
@@ -61,6 +89,43 @@ export default function CalendarioTab() {
     }
   };
 
+  const loadGoogleSyncStatus = async () => {
+    const status = await getSyncStatus();
+    setGoogleSyncStatus(status);
+  };
+
+  const handleConnectGoogle = () => {
+    const authUrl = getGoogleAuthUrl();
+    window.location.href = authUrl;
+  };
+
+  const handleDisconnectGoogle = async () => {
+    if (!confirm('¿Deseas desconectar tu cuenta de Google Calendar? Los eventos no se eliminarán.')) return;
+    
+    const success = await disconnectGoogleCalendar();
+    if (success) {
+      alert('✅ Google Calendar desconectado correctamente');
+      loadGoogleSyncStatus();
+    } else {
+      alert('❌ Error al desconectar Google Calendar');
+    }
+  };
+
+  const handleSyncFromGoogle = async () => {
+    try {
+      setSyncing(true);
+      const syncedCount = await syncEventsFromGoogle();
+      alert(`✅ ${syncedCount} eventos sincronizados desde Google Calendar`);
+      loadEventos();
+      loadGoogleSyncStatus();
+    } catch (error) {
+      console.error('Error syncing from Google:', error);
+      alert('❌ Error al sincronizar desde Google Calendar');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -74,6 +139,8 @@ export default function CalendarioTab() {
         reforma_id: formData.reforma_id || null,
       };
 
+      let eventoId: string;
+
       if (editingEvento) {
         const { error } = await supabase
           .from('eventos_globales')
@@ -81,18 +148,29 @@ export default function CalendarioTab() {
           .eq('id', editingEvento.id);
 
         if (error) throw error;
+        eventoId = editingEvento.id;
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('eventos_globales')
-          .insert([eventoData]);
+          .insert([eventoData])
+          .select()
+          .single();
 
         if (error) throw error;
+        eventoId = data.id;
+      }
+
+      // Sincronizar con Google Calendar si está conectado
+      if (googleSyncStatus?.isConnected && eventoId) {
+        await syncEventToGoogle(eventoId);
       }
 
       loadEventos();
+      loadGoogleSyncStatus();
       closeModal();
     } catch (error) {
       console.error('Error guardando evento:', error);
+      alert('Error al guardar el evento');
     }
   };
 
@@ -100,6 +178,11 @@ export default function CalendarioTab() {
     if (!confirm('¿Estás seguro de eliminar este evento?')) return;
 
     try {
+      // Eliminar sincronización con Google si existe
+      if (googleSyncStatus?.isConnected) {
+        await unsyncEvent(id);
+      }
+
       const { error } = await supabase
         .from('eventos_globales')
         .delete()
@@ -107,8 +190,10 @@ export default function CalendarioTab() {
 
       if (error) throw error;
       loadEventos();
+      loadGoogleSyncStatus();
     } catch (error) {
       console.error('Error eliminando evento:', error);
+      alert('Error al eliminar el evento');
     }
   };
 
@@ -235,11 +320,12 @@ export default function CalendarioTab() {
                 {eventosDelDia.slice(0, 3).map((evento) => (
                   <div
                     key={evento.id}
-                    className="text-xs p-1 bg-wos-bg rounded cursor-pointer hover:bg-wos-border transition-smooth truncate"
+                    className="text-xs p-1 bg-wos-bg rounded cursor-pointer hover:bg-wos-border transition-smooth truncate flex items-center gap-1"
                     onClick={() => openModal(evento)}
                     title={evento.titulo}
                   >
-                    {evento.titulo}
+                    {evento.is_google_event && <Cloud size={10} className="text-blue-400 flex-shrink-0" />}
+                    <span className="truncate">{evento.titulo}</span>
                   </div>
                 ))}
                 {eventosDelDia.length > 3 && (
@@ -387,7 +473,7 @@ export default function CalendarioTab() {
       </div>
 
       {/* Controles */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => changeDate('prev')}
@@ -450,6 +536,23 @@ export default function CalendarioTab() {
             </button>
           </div>
 
+          {/* Botón Google Calendar */}
+          <button
+            onClick={() => setShowGooglePanel(!showGooglePanel)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-smooth ${
+              googleSyncStatus?.isConnected
+                ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                : 'bg-wos-card text-wos-text hover:bg-wos-border'
+            }`}
+            title={googleSyncStatus?.isConnected ? 'Google Calendar conectado' : 'Conectar con Google Calendar'}
+          >
+            <Cloud size={18} />
+            <span className="hidden sm:inline">
+              {googleSyncStatus?.isConnected ? 'Google' : 'Conectar Google'}
+            </span>
+            {googleSyncStatus?.isConnected && <CheckCircle size={16} />}
+          </button>
+
           <button
             onClick={() => openModal()}
             className="flex items-center gap-2 px-4 py-2 bg-wos-accent text-wos-bg rounded-lg hover:opacity-90 transition-smooth"
@@ -459,6 +562,141 @@ export default function CalendarioTab() {
           </button>
         </div>
       </div>
+
+      {/* Panel de Google Calendar */}
+      {showGooglePanel && (
+        <div className="bg-wos-card border border-wos-border rounded-lg p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-wos-text mb-2 flex items-center gap-2">
+                <Cloud size={20} className="text-wos-accent" />
+                Integración con Google Calendar
+              </h3>
+              <p className="text-sm text-wos-text-muted">
+                Sincroniza tus eventos automáticamente con Google Calendar
+              </p>
+            </div>
+            <button
+              onClick={() => setShowGooglePanel(false)}
+              className="text-wos-text-muted hover:text-wos-text transition-smooth"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {googleSyncStatus?.isConnected ? (
+            <div className="space-y-4">
+              {/* Estado de sincronización */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-wos-bg rounded-lg p-4">
+                  <div className="text-2xl font-bold text-wos-accent mb-1">
+                    {googleSyncStatus.totalEvents}
+                  </div>
+                  <div className="text-xs text-wos-text-muted">Total Eventos</div>
+                </div>
+                <div className="bg-wos-bg rounded-lg p-4">
+                  <div className="text-2xl font-bold text-green-400 mb-1">
+                    {googleSyncStatus.syncedEvents}
+                  </div>
+                  <div className="text-xs text-wos-text-muted">Sincronizados</div>
+                </div>
+                <div className="bg-wos-bg rounded-lg p-4">
+                  <div className="text-2xl font-bold text-yellow-400 mb-1">
+                    {googleSyncStatus.pendingEvents}
+                  </div>
+                  <div className="text-xs text-wos-text-muted">Pendientes</div>
+                </div>
+                <div className="bg-wos-bg rounded-lg p-4">
+                  <div className="text-2xl font-bold text-red-400 mb-1">
+                    {googleSyncStatus.errorEvents}
+                  </div>
+                  <div className="text-xs text-wos-text-muted">Errores</div>
+                </div>
+              </div>
+
+              {/* Última sincronización */}
+              {googleSyncStatus.lastSync && (
+                <div className="text-sm text-wos-text-muted">
+                  Última sincronización: {new Date(googleSyncStatus.lastSync).toLocaleString('es-ES')}
+                </div>
+              )}
+
+              {/* Botones de acción */}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSyncFromGoogle}
+                  disabled={syncing}
+                  className="flex items-center gap-2 px-4 py-2 bg-wos-accent text-wos-bg rounded-lg hover:opacity-90 transition-smooth disabled:opacity-50"
+                >
+                  <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+                  {syncing ? 'Sincronizando...' : 'Sincronizar Ahora'}
+                </button>
+                
+                <button
+                  onClick={handleDisconnectGoogle}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-smooth"
+                >
+                  <XCircle size={16} />
+                  Desconectar
+                </button>
+              </div>
+
+              {/* Información */}
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <p className="text-sm text-blue-300">
+                  ℹ️ Los eventos se sincronizan automáticamente. Los eventos creados en WOS se envían a Google Calendar,
+                  y los eventos de Google Calendar aparecen aquí.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-wos-bg rounded-lg p-6 text-center">
+                <Cloud size={48} className="mx-auto text-wos-text-muted mb-4" />
+                <h4 className="text-lg font-semibold text-wos-text mb-2">
+                  Conecta tu Google Calendar
+                </h4>
+                <p className="text-sm text-wos-text-muted mb-6">
+                  Sincroniza tus eventos automáticamente entre WOS y Google Calendar.
+                  Podrás acceder a tus eventos desde cualquier dispositivo.
+                </p>
+                <button
+                  onClick={handleConnectGoogle}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-wos-accent text-wos-bg rounded-lg hover:opacity-90 transition-smooth"
+                >
+                  <Cloud size={20} />
+                  Conectar con Google Calendar
+                </button>
+              </div>
+
+              {/* Beneficios */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-wos-bg rounded-lg p-4">
+                  <CheckCircle size={24} className="text-green-400 mb-2" />
+                  <h5 className="text-sm font-semibold text-wos-text mb-1">Sincronización Automática</h5>
+                  <p className="text-xs text-wos-text-muted">
+                    Los cambios se sincronizan automáticamente sin intervención manual
+                  </p>
+                </div>
+                <div className="bg-wos-bg rounded-lg p-4">
+                  <RefreshCw size={24} className="text-blue-400 mb-2" />
+                  <h5 className="text-sm font-semibold text-wos-text mb-1">Bidireccional</h5>
+                  <p className="text-xs text-wos-text-muted">
+                    Crea eventos en WOS o Google Calendar indistintamente
+                  </p>
+                </div>
+                <div className="bg-wos-bg rounded-lg p-4">
+                  <Cloud size={24} className="text-purple-400 mb-2" />
+                  <h5 className="text-sm font-semibold text-wos-text mb-1">Acceso Universal</h5>
+                  <p className="text-xs text-wos-text-muted">
+                    Accede a tus eventos desde cualquier dispositivo con Google Calendar
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Calendario */}
       {renderCalendar()}
