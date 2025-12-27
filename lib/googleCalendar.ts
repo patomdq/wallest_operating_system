@@ -39,11 +39,16 @@ export interface SyncStatus {
 }
 
 // Configuración de Google OAuth
+// En producción (Vercel), estas variables se leen de las Environment Variables del dashboard de Vercel
+// En desarrollo, se leen del archivo .env.local
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
-const GOOGLE_CLIENT_SECRET = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET || '';
-const REDIRECT_URI = typeof window !== 'undefined' 
-  ? `${window.location.origin}/api/google/callback` 
-  : 'http://localhost:3000/api/google/callback';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || ''; // NO debe ser NEXT_PUBLIC (por seguridad)
+
+// Redirect URI: DEBE coincidir EXACTAMENTE con el configurado en Google Console
+const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 
+  (typeof window !== 'undefined' 
+    ? `${window.location.origin}/api/google/callback` 
+    : 'https://wallest-operating-system.vercel.app/api/google/callback');
 
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar',

@@ -34,11 +34,14 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setIsAuthenticated(!!session);
       
+      // Solo redirigir en eventos explícitos de login/logout
       if (event === 'SIGNED_OUT') {
         router.push('/login');
-      } else if (event === 'SIGNED_IN') {
+      } else if (event === 'SIGNED_IN' && pathname === '/login') {
+        // Solo redirigir al dashboard si estaba en login
         router.push('/');
       }
+      // No redirigir en otros eventos (TOKEN_REFRESHED, etc.)
     });
 
     return () => {

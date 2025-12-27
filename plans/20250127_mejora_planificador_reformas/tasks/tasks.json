@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1",
+    "content": "Crear nueva estructura de tablas SQL: partidas_plantilla, items_plantilla, partidas_reforma_detalladas, items_partida_reforma",
+    "status": "completed"
+  },
+  {
+    "id": "2",
+    "content": "Insertar datos de plantilla base con partidas e ítems precargados en las tablas plantilla",
+    "status": "completed"
+  },
+  {
+    "id": "3",
+    "content": "Actualizar tipos TypeScript en lib/supabase.ts para las nuevas estructuras de datos",
+    "status": "completed"
+  },
+  {
+    "id": "4",
+    "content": "Crear componente ItemsTable para mostrar/editar ítems dentro de cada partida",
+    "status": "completed"
+  },
+  {
+    "id": "5",
+    "content": "Refactorizar page.tsx del planificador para usar partidas precargadas y calcular totales automáticamente",
+    "status": "completed"
+  },
+  {
+    "id": "6",
+    "content": "Crear función para clonar plantilla base al crear nueva reforma",
+    "status": "completed"
+  }
+]

@@ -171,6 +171,54 @@ export type PartidaReforma = {
   updated_at?: string;
 };
 
+// Tipos para el nuevo sistema de planificador detallado
+export type PartidaPlantilla = {
+  id: string;
+  nombre: string;
+  categoria: 'obra' | 'materiales' | 'mobiliario' | 'electro' | 'decoracion' | 'otros';
+  orden: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type ItemPlantilla = {
+  id: string;
+  partida_plantilla_id: string;
+  nombre: string;
+  orden: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type PartidaReformaDetallada = {
+  id: string;
+  reforma_id: string;
+  nombre: string;
+  categoria: 'obra' | 'materiales' | 'mobiliario' | 'electro' | 'decoracion' | 'otros';
+  estado: 'pendiente' | 'en_curso' | 'ok';
+  total_calculado: number;
+  notas?: string;
+  orden: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type ItemPartidaReforma = {
+  id: string;
+  partida_reforma_id: string;
+  nombre: string;
+  estancia?: string;
+  proveedor?: string;
+  coste?: number;
+  fecha_compra?: string;
+  fecha_entrega?: string;
+  fecha_instalacion?: string;
+  nota?: string;
+  orden: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type Comercializacion = {
   id: string;
   inmueble_id: string;
