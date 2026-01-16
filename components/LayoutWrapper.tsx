@@ -9,10 +9,20 @@ import ProtectedRoute from './ProtectedRoute';
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
+  const isHubPage = pathname === '/hub';
 
-  // Si es la página de login, mostrar solo el contenido sin layout
+  // Si es la página de login, mostrar solo el contenido sin layout ni protección
   if (isLoginPage) {
     return <>{children}</>;
+  }
+
+  // Si es la página de hub, proteger pero sin layout
+  if (isHubPage) {
+    return (
+      <ProtectedRoute>
+        {children}
+      </ProtectedRoute>
+    );
   }
 
   // Para otras páginas, mostrar el layout completo con protección

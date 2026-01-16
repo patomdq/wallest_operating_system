@@ -89,25 +89,56 @@ function generateState(): string {
  */
 export async function exchangeCodeForTokens(code: string): Promise<GoogleCalendarToken | null> {
   try {
+    // 🔍 LOGGING: Verificar que las variables NO sean undefined
+    console.log('🔐 [OAuth Exchange] Iniciando intercambio de código por tokens');
+    console.log('🔐 [OAuth Exchange] Variables de entorno:');
+    console.log('  - GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : '❌ UNDEFINED');
+    console.log('  - GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? '✓ Definido (no se muestra)' : '❌ UNDEFINED');
+    console.log('  - REDIRECT_URI:', REDIRECT_URI || '❌ UNDEFINED');
+    console.log('  - Code length:', code?.length || 0);
+
+    // Verificar que todas las variables necesarias estén definidas
+    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !REDIRECT_URI) {
+      console.error('❌ [OAuth Exchange] Variables de entorno faltantes:');
+      if (!GOOGLE_CLIENT_ID) console.error('  - GOOGLE_CLIENT_ID no está definido');
+      if (!GOOGLE_CLIENT_SECRET) console.error('  - GOOGLE_CLIENT_SECRET no está definido');
+      if (!REDIRECT_URI) console.error('  - REDIRECT_URI no está definido');
+      throw new Error('Missing required environment variables');
+    }
+
+    const requestBody = new URLSearchParams({
+      code,
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      redirect_uri: REDIRECT_URI,
+      grant_type: 'authorization_code',
+    });
+
+    console.log('📤 [OAuth Exchange] Enviando request a Google con redirect_uri:', REDIRECT_URI);
+
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        code,
-        client_id: GOOGLE_CLIENT_ID,
-        client_secret: GOOGLE_CLIENT_SECRET,
-        redirect_uri: REDIRECT_URI,
-        grant_type: 'authorization_code',
-      }),
+      body: requestBody,
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error('Failed to exchange code for tokens');
+      // 🔍 LOGGING: Detalles completos del error de Google
+      console.error('❌ [OAuth Exchange] Error de Google:');
+      console.error('  - Status:', response.status);
+      console.error('  - Status Text:', response.statusText);
+      console.error('  - Error:', data.error);
+      console.error('  - Error Description:', data.error_description);
+      console.error('  - Body completo:', JSON.stringify(data, null, 2));
+      
+      throw new Error(`Google OAuth error: ${data.error} - ${data.error_description || 'No description'}`);
     }
 
-    const data = await response.json();
+    console.log('✅ [OAuth Exchange] Tokens recibidos exitosamente');
     
     // Calcular fecha de expiración
     const expiresIn = data.expires_in || 3600; // Default 1 hora

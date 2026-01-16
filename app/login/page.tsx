@@ -28,7 +28,7 @@ export default function LoginPage() {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        router.push('/');
+        router.push('/hub');
       }
     };
     
@@ -67,8 +67,8 @@ export default function LoginPage() {
           localStorage.removeItem('wos-remember-email');
         }
         
-        // Redirigir al dashboard
-        router.push('/');
+        // Redirigir al hub
+        router.push('/hub');
       }
     } catch (error) {
       console.error('Error de login:', error);

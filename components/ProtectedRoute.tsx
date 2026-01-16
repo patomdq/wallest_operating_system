@@ -38,8 +38,8 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       if (event === 'SIGNED_OUT') {
         router.push('/login');
       } else if (event === 'SIGNED_IN' && pathname === '/login') {
-        // Solo redirigir al dashboard si estaba en login
-        router.push('/');
+        // Solo redirigir al hub si estaba en login
+        router.push('/hub');
       }
       // No redirigir en otros eventos (TOKEN_REFRESHED, etc.)
     });
