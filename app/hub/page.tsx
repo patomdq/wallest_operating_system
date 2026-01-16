@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Building2, Wrench, Handshake } from 'lucide-react';
+import { Building2, Wrench, Users } from 'lucide-react';
 
 export default function HubPage() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function HubPage() {
       id: 'nexo',
       nombre: 'NEXO',
       descripcion: 'Comercialización y ventas',
-      icon: Handshake,
+      icon: Users,
       color: 'from-green-500 to-green-700',
       hoverColor: 'hover:from-green-600 hover:to-green-800',
       path: '/nexo',

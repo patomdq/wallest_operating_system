@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
@@ -6,7 +6,12 @@ import LayoutWrapper from '@/components/LayoutWrapper'
 export const metadata: Metadata = {
   title: 'WOS 1.0 - Wallest Operating System',
   description: 'Sistema operativo para gestión inmobiliaria integral',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({
