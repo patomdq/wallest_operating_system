@@ -5,6 +5,8 @@ import Sidebar from './Sidebar';
 import HeaderBar from './HeaderBar';
 import SidebarOverlay from './SidebarOverlay';
 import ProtectedRoute from './ProtectedRoute';
+import EntornoGuard from './EntornoGuard';
+import WOSChat from './WOSChat';
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,22 +27,26 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     );
   }
 
-  // Para otras páginas, mostrar el layout completo con protección
+  // Para otras páginas, mostrar el layout completo con protección y guard de entorno
   return (
     <ProtectedRoute>
-      <div className="flex h-screen overflow-hidden relative">
-        <Sidebar />
-        
-        {/* Overlay para móvil */}
-        <SidebarOverlay />
-        
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <HeaderBar />
-          <main className="flex-1 overflow-y-auto">
-            {children}
-          </main>
+      <EntornoGuard>
+        <div className="flex h-screen overflow-hidden relative">
+          <Sidebar />
+
+          {/* Overlay para móvil */}
+          <SidebarOverlay />
+
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <HeaderBar />
+            <main className="flex-1 overflow-y-auto">
+              {children}
+            </main>
+          </div>
+
+          <WOSChat />
         </div>
-      </div>
+      </EntornoGuard>
     </ProtectedRoute>
   );
 }

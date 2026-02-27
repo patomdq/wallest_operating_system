@@ -466,7 +466,227 @@ export default function CalculadoraRentabilidad() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <>
+      {/* Estilos específicos para impresión */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          header, nav, .sidebar, .no-print, button, .hamburger-menu {
+            display: none !important;
+          }
+          .print-view {
+            display: block !important;
+          }
+          .screen-view {
+            display: none !important;
+          }
+          @page {
+            size: A4;
+            margin: 15mm;
+          }
+          body {
+            background: white !important;
+            color: black !important;
+          }
+          * {
+            color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
+        @media screen {
+          .print-view {
+            display: none;
+          }
+        }
+      `}} />
+
+      {/* Vista de impresión (solo visible al imprimir) */}
+      <div className="print-view">
+        <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '800px', margin: '0 auto', padding: '20px', backgroundColor: 'white' }}>
+          {/* Encabezado */}
+          <div style={{ borderBottom: '3px solid #2563eb', paddingBottom: '15px', marginBottom: '25px' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1e40af', margin: '0 0 5px 0' }}>
+              WOS 1.0 - Wallest Operating System
+            </h1>
+            <h2 style={{ fontSize: '20px', color: '#64748b', margin: '0' }}>
+              Calculadora de Rentabilidad
+            </h2>
+          </div>
+
+          {/* Información del Proyecto */}
+          <div style={{ marginBottom: '25px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e40af', marginBottom: '10px', borderBottom: '2px solid #e2e8f0', paddingBottom: '5px' }}>
+              Información del Proyecto
+            </h3>
+            <table style={{ width: '100%', fontSize: '14px' }}>
+              <tbody>
+                {nombre && (
+                  <tr>
+                    <td style={{ padding: '5px 0', fontWeight: 'bold', width: '30%' }}>Nombre:</td>
+                    <td style={{ padding: '5px 0' }}>{nombre}</td>
+                  </tr>
+                )}
+                {direccion && (
+                  <tr>
+                    <td style={{ padding: '5px 0', fontWeight: 'bold' }}>Dirección:</td>
+                    <td style={{ padding: '5px 0' }}>{direccion}</td>
+                  </tr>
+                )}
+                {ciudad && (
+                  <tr>
+                    <td style={{ padding: '5px 0', fontWeight: 'bold' }}>Ciudad:</td>
+                    <td style={{ padding: '5px 0' }}>{ciudad}</td>
+                  </tr>
+                )}
+                {barrio && (
+                  <tr>
+                    <td style={{ padding: '5px 0', fontWeight: 'bold' }}>Barrio:</td>
+                    <td style={{ padding: '5px 0' }}>{barrio}</td>
+                  </tr>
+                )}
+                {tipoInmueble && (
+                  <tr>
+                    <td style={{ padding: '5px 0', fontWeight: 'bold' }}>Tipo:</td>
+                    <td style={{ padding: '5px 0' }}>{tipoInmueble}</td>
+                  </tr>
+                )}
+                <tr>
+                  <td style={{ padding: '5px 0', fontWeight: 'bold' }}>Duración estimada:</td>
+                  <td style={{ padding: '5px 0' }}>{duracionMeses} meses</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Inversión Total */}
+          <div style={{ marginBottom: '25px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e40af', marginBottom: '10px', borderBottom: '2px solid #e2e8f0', paddingBottom: '5px' }}>
+              Inversión Total
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f1f5f9' }}>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>Concepto</th>
+                  <th style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>Estimado</th>
+                  <th style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>Real</th>
+                </tr>
+              </thead>
+              <tbody>
+                {CONCEPTOS_GASTOS.map((concepto) => {
+                  const est = gastos[concepto.id].estimado;
+                  const rea = gastos[concepto.id].real;
+                  if (est === 0 && rea === 0) return null;
+                  
+                  return (
+                    <tr key={concepto.id}>
+                      <td style={{ padding: '6px 8px', border: '1px solid #e2e8f0' }}>{concepto.nombre}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #e2e8f0' }}>
+                        {est > 0 ? formatEuro(est) : '-'}
+                      </td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #e2e8f0' }}>
+                        {rea > 0 ? formatEuro(rea) : '-'}
+                      </td>
+                    </tr>
+                  );
+                })}
+                <tr style={{ backgroundColor: '#f8fafc', fontWeight: 'bold' }}>
+                  <td style={{ padding: '10px 8px', border: '2px solid #2563eb' }}>TOTAL INVERSIÓN</td>
+                  <td style={{ padding: '10px 8px', textAlign: 'right', border: '2px solid #2563eb' }}>
+                    {formatEuro(resultados.totalInversionEstimado)}
+                  </td>
+                  <td style={{ padding: '10px 8px', textAlign: 'right', border: '2px solid #2563eb' }}>
+                    {formatEuro(resultados.totalInversionReal)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Escenarios de Venta y Rentabilidad */}
+          <div style={{ marginBottom: '25px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e40af', marginBottom: '10px', borderBottom: '2px solid #e2e8f0', paddingBottom: '5px' }}>
+              Escenarios de Venta y Rentabilidad
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f1f5f9' }}>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>Escenario</th>
+                  <th style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>Precio Venta</th>
+                  <th style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>Beneficio</th>
+                  <th style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>Rentabilidad</th>
+                  <th style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>Rent. Anualizada</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ padding: '8px', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>Pesimista</td>
+                  <td style={{ padding: '8px', textAlign: 'right', border: '1px solid #e2e8f0' }}>{formatEuro(precioVentaPesimista)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', border: '1px solid #e2e8f0', color: resultados.beneficioPesimista >= 0 ? '#16a34a' : '#dc2626' }}>
+                    {formatEuro(resultados.beneficioPesimista)}
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0', color: resultados.rentabilidadPesimista >= 0 ? '#16a34a' : '#dc2626' }}>
+                    {resultados.rentabilidadPesimista.toFixed(2)}%
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0', color: resultados.rentabilidadAnualizadaPesimista >= 0 ? '#16a34a' : '#dc2626' }}>
+                    {resultados.rentabilidadAnualizadaPesimista.toFixed(2)}%
+                  </td>
+                </tr>
+                <tr style={{ backgroundColor: '#f8fafc' }}>
+                  <td style={{ padding: '8px', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>Realista</td>
+                  <td style={{ padding: '8px', textAlign: 'right', border: '1px solid #e2e8f0' }}>{formatEuro(precioVentaRealista)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', border: '1px solid #e2e8f0', color: resultados.beneficioRealista >= 0 ? '#16a34a' : '#dc2626' }}>
+                    {formatEuro(resultados.beneficioRealista)}
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0', color: resultados.rentabilidadRealista >= 0 ? '#16a34a' : '#dc2626' }}>
+                    {resultados.rentabilidadRealista.toFixed(2)}%
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0', color: resultados.rentabilidadAnualizadaRealista >= 0 ? '#16a34a' : '#dc2626' }}>
+                    {resultados.rentabilidadAnualizadaRealista.toFixed(2)}%
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '8px', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>Optimista</td>
+                  <td style={{ padding: '8px', textAlign: 'right', border: '1px solid #e2e8f0' }}>{formatEuro(precioVentaOptimista)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', border: '1px solid #e2e8f0', color: resultados.beneficioOptimista >= 0 ? '#16a34a' : '#dc2626' }}>
+                    {formatEuro(resultados.beneficioOptimista)}
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0', color: resultados.rentabilidadOptimista >= 0 ? '#16a34a' : '#dc2626' }}>
+                    {resultados.rentabilidadOptimista.toFixed(2)}%
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0', color: resultados.rentabilidadAnualizadaOptimista >= 0 ? '#16a34a' : '#dc2626' }}>
+                    {resultados.rentabilidadAnualizadaOptimista.toFixed(2)}%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Observaciones */}
+          {observaciones && observaciones.trim() !== '' && (
+            <div style={{ marginBottom: '25px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e40af', marginBottom: '10px', borderBottom: '2px solid #e2e8f0', paddingBottom: '5px' }}>
+                Observaciones
+              </h3>
+              <div style={{ fontSize: '13px', padding: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', whiteSpace: 'pre-wrap' }}>
+                {observaciones}
+              </div>
+            </div>
+          )}
+
+          {/* Pie de página */}
+          <div style={{ marginTop: '40px', paddingTop: '15px', borderTop: '2px solid #e2e8f0', fontSize: '11px', color: '#64748b', textAlign: 'center' }}>
+            <p style={{ margin: '5px 0' }}>
+              Documento generado por WOS 1.0 - Wallest Operating System
+            </p>
+            <p style={{ margin: '5px 0' }}>
+              Fecha de impresión: {new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Vista normal (solo visible en pantalla) */}
+      <div className="screen-view space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -954,6 +1174,7 @@ export default function CalculadoraRentabilidad() {
           </p>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

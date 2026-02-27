@@ -2,9 +2,15 @@
 
 import { useRouter } from 'next/navigation';
 import { Building2, Wrench, Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function HubPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const entornos = [
     {
@@ -36,8 +42,16 @@ export default function HubPage() {
     },
   ];
 
-  const handleEntornoClick = (path: string) => {
-    router.push(path);
+  const handleEntornoClick = (entornoId: string, path: string) => {
+    if (!mounted) return;
+    
+    try {
+      // Guardar entorno seleccionado en localStorage
+      localStorage.setItem('wos_env', entornoId.toUpperCase());
+      router.push(path);
+    } catch (error) {
+      console.error('Error guardando entorno:', error);
+    }
   };
 
   return (
@@ -60,7 +74,7 @@ export default function HubPage() {
             return (
               <button
                 key={entorno.id}
-                onClick={() => handleEntornoClick(entorno.path)}
+                onClick={() => handleEntornoClick(entorno.id, entorno.path)}
                 className={`
                   group relative overflow-hidden
                   bg-gradient-to-br ${entorno.color} ${entorno.hoverColor}

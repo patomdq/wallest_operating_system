@@ -5,6 +5,7 @@ import { useSidebar } from '@/contexts/SidebarContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect } from 'react';
+import CambiarEntornoButton from './CambiarEntornoButton';
 
 const getPageTitle = (pathname: string): string => {
   if (pathname === '/') return 'Dashboard General WOS';
@@ -84,8 +85,10 @@ export default function HeaderBar() {
         )}
       </div>
 
-      {/* Usuario y cerrar sesión */}
+      {/* Botón cambiar entorno, usuario y cerrar sesión */}
       <div className="flex items-center space-x-1 md:space-x-3 flex-shrink-0">
+        <CambiarEntornoButton />
+        
         {userEmail && (
           <div className="hidden lg:block text-right max-w-[200px]">
             <p className="text-sm text-wos-text truncate">{userEmail}</p>
