@@ -16,14 +16,39 @@ const SYSTEM_PROMPT = `Eres el asistente operativo de Wallest (Hasu Activos Inmo
 PERSONALIDAD: Directo, profesional, hablas como co-CEO no como asistente. Dices las cosas como son, sin rodeos, sin exagerar. Español de España en todo momento.
 
 CONVERSACIÓN:
-- Si no sabes con quién hablas, preséntate brevemente y pregnta el nombre. Ejemplo: "Buenas, soy el asistente de Wallest. ¿Con quién hablo? 
-- Responde solo lo que te preguntan — si preguntan el saldo, solo el saldo
-- Si preguntan por una operación específica, solo esa operación
+- Si no sabes con quién hablas, preséntate brevemente y pregunta el nombre
+- Responde solo lo que te preguntan
 - Respuestas cortas y precisas salvo que pidan un resumen completo
 - Nunca inventes números — usa solo los datos del contexto
 - El saldo real está en SALDO_ACTUAL — nunca lo calcules tú
 
-FORMATO:
+ACCIONES DISPONIBLES — responde ÚNICAMENTE con el JSON exacto cuando el usuario quiera ejecutar una acción:
+
+1. REGISTRAR MOVIMIENTO FINANCIERO:
+{"action":"insert_movimiento","data":{"fecha":"YYYY-MM-DD","tipo":"Gasto","categoria":"","concepto":"","monto":0,"cuenta":"CaixaBank","forma_pago":"","proveedor":"","proyecto_id":null,"observaciones":""}}
+
+2. ACTUALIZAR ESTADO DE PARTIDA DE REFORMA:
+{"action":"update_partida_estado","data":{"partida_id":"","estado":"pendiente"}}
+
+3. ACTUALIZAR ITEM DE PLANIFICADOR:
+{"action":"update_item","data":{"item_id":"","coste":0,"proveedor":"","fecha_compra":"","fecha_entrega":"","fecha_instalacion":"","nota":""}}
+
+VALORES VÁLIDOS:
+- tipo movimiento: "Gasto" o "Ingreso"
+- categoria movimiento: Materiales, Servicios, Impuestos, Sueldos, Honorarios, Suministros, Seguros, Gestoría, Notaría, Registro, Comunidad, Legal, Contable, Marketing, Comisiones, Arras, Ventas, Saldo Inicial, Otros
+- cuenta: Banco Sabadell, BBVA, CaixaBank, Santander, Caja, Otra — por defecto "CaixaBank"
+- forma_pago: Efectivo, Débito, Crédito, Transferencia, Bizum, Cheque
+- proyecto_id para Olula: "347d78d9-1de8-4639-8853-8262b0b962e9"
+- estado partida: "pendiente", "en_curso", "ok"
+- fecha: usa FECHA_HOY si no especifican
+
+REGLAS:
+- Si falta monto o concepto en un movimiento, pregunta antes de generar el JSON
+- Si el usuario menciona una partida por nombre (ej: "electricidad"), búscala en PARTIDAS y usa su id
+- Si el usuario menciona un item por nombre (ej: "cuadro eléctrico"), búscalo en ITEMS y usa su id
+- Solo un JSON por respuesta, nunca texto adicional junto al JSON
+
+FORMATO RESPUESTAS NORMALES:
 - Sin markdown complejo
 - Sin asteriscos dobles
 - Listas simples con guión cuando sea necesario
@@ -34,22 +59,30 @@ function needsContext(message: string): boolean {
     'saldo', 'dinero', 'caja', 'banco', 'plata',
     'inmueble', 'piso', 'propiedad', 'olula', 'zurgena', 'cuevas',
     'reforma', 'obra', 'presupuesto', 'gasto', 'pago', 'costo',
+    'partida', 'electricidad', 'fontanería', 'carpintería', 'pintura',
+    'albañilería', 'cerrajería', 'iluminación', 'suelo', 'puerta',
+    'ventana', 'cocina', 'electrodoméstico', 'baño', 'mobiliario',
+    'textil', 'limpieza', 'item', 'cuadro', 'cableado',
     'operación', 'proyecto', 'rentabilidad', 'beneficio', 'ganancia',
     'lead', 'cliente', 'comprador', 'venta', 'comercial',
     'proveedor', 'hassan', 'material',
     'finanza', 'movimiento', 'ingreso', 'egreso',
-    'resumen', 'estado', 'situación', 'empresa', 'hasu', 'wallest'
+    'resumen', 'estado', 'situación', 'empresa', 'hasu', 'wallest',
+    'registra', 'anota', 'añade', 'carga', 'apunta', 'actualiza', 'cambia', 'marca'
   ];
   const lower = message.toLowerCase();
   return keywords.some(k => lower.includes(k));
 }
 
 async function getContext() {
+  const fechaHoy = new Date().toISOString().split('T')[0];
+
   const [
     { data: inmuebles },
     { data: movimientos_empresa },
     { data: reformas },
-    { data: planificacion_reforma },
+    { data: partidas },
+    { data: items },
     { data: leads },
     { data: proveedores },
     { data: comercializacion },
@@ -59,7 +92,8 @@ async function getContext() {
     supabase.from('inmuebles').select('*'),
     supabase.from('movimientos_empresa').select('*'),
     supabase.from('reformas').select('*'),
-    supabase.from('planificacion_reforma').select('*'),
+    supabase.from('partidas_reforma_detalladas').select('*'),
+    supabase.from('items_partida_reforma').select('*'),
     supabase.from('leads').select('*'),
     supabase.from('proveedores').select('*'),
     supabase.from('comercializacion').select('*'),
@@ -69,16 +103,77 @@ async function getContext() {
 
   return `
 === DATOS HASU ===
+FECHA_HOY: ${fechaHoy}
 SALDO_ACTUAL: ${JSON.stringify(saldo_actual)}
 INMUEBLES: ${JSON.stringify(inmuebles)}
 MOVIMIENTOS: ${JSON.stringify(movimientos_empresa)}
 REFORMAS: ${JSON.stringify(reformas)}
-PLANIFICACION_REFORMA: ${JSON.stringify(planificacion_reforma)}
+PARTIDAS: ${JSON.stringify(partidas)}
+ITEMS: ${JSON.stringify(items)}
 LEADS: ${JSON.stringify(leads)}
 PROVEEDORES: ${JSON.stringify(proveedores)}
 COMERCIALIZACION: ${JSON.stringify(comercializacion)}
 FINANZAS: ${JSON.stringify(finanzas)}
 === FIN ===`;
+}
+
+async function handleAction(action: string, data: Record<string, unknown>): Promise<string> {
+  if (action === 'insert_movimiento') {
+    const { error } = await supabase
+      .from('movimientos_empresa')
+      .insert([data]);
+
+    if (error) return `Error al registrar el movimiento: ${error.message}`;
+
+    if (data.proyecto_id) {
+      const finanzasData = {
+        reforma_id: data.proyecto_id,
+        fecha: data.fecha,
+        tipo: (data.tipo as string).toLowerCase(),
+        categoria: data.categoria,
+        descripcion: data.concepto,
+        proveedor: data.proveedor || '',
+        cantidad: 1,
+        precio_unitario: data.monto,
+        total: data.monto,
+        forma_pago: data.forma_pago,
+        observaciones: data.observaciones || ''
+      };
+      await supabase.from('finanzas_proyecto').insert([finanzasData]);
+    }
+
+    return `Registrado. ${data.tipo} de ${data.monto}€ — ${data.concepto} (${data.fecha})`;
+  }
+
+  if (action === 'update_partida_estado') {
+    const { error } = await supabase
+      .from('partidas_reforma_detalladas')
+      .update({ estado: data.estado })
+      .eq('id', data.partida_id);
+
+    if (error) return `Error al actualizar la partida: ${error.message}`;
+    return `Partida actualizada a "${data.estado}".`;
+  }
+
+  if (action === 'update_item') {
+    const updates: Record<string, unknown> = {};
+    if (data.coste) updates.coste = data.coste;
+    if (data.proveedor) updates.proveedor = data.proveedor;
+    if (data.fecha_compra) updates.fecha_compra = data.fecha_compra;
+    if (data.fecha_entrega) updates.fecha_entrega = data.fecha_entrega;
+    if (data.fecha_instalacion) updates.fecha_instalacion = data.fecha_instalacion;
+    if (data.nota) updates.nota = data.nota;
+
+    const { error } = await supabase
+      .from('items_partida_reforma')
+      .update(updates)
+      .eq('id', data.item_id);
+
+    if (error) return `Error al actualizar el item: ${error.message}`;
+    return `Item actualizado correctamente.`;
+  }
+
+  return 'Acción no reconocida.';
 }
 
 export async function POST(request: NextRequest) {
@@ -104,10 +199,19 @@ export async function POST(request: NextRequest) {
       messages,
     });
 
-    return NextResponse.json({
-      response: response.content[0].type === 'text' ? response.content[0].text : '',
-      success: true
-    });
+    const responseText = response.content[0].type === 'text' ? response.content[0].text : '';
+
+    try {
+      const parsed = JSON.parse(responseText.trim());
+      if (parsed.action && parsed.data) {
+        const result = await handleAction(parsed.action, parsed.data);
+        return NextResponse.json({ response: result, success: true });
+      }
+    } catch {
+      // Respuesta normal de texto
+    }
+
+    return NextResponse.json({ response: responseText, success: true });
 
   } catch (error) {
     console.error('Error:', error);
