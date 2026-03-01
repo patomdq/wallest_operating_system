@@ -18,7 +18,7 @@ type Inmueble = {
   habitaciones: number | null;
   banos: number | null;
   descripcion: string | null;
-  estado: 'EN_ESTUDIO' | 'ARRAS' | 'COMPRADO' | 'VENDIDO';
+  estado: 'EN_ESTUDIO' | 'ARRAS' | 'COMPRADO' | 'OFERTADO' | 'RESERVADO' | 'VENDIDO';
   fecha_alta: string | null;
   fecha_compra: string | null;
   created_at: string | null;
@@ -68,13 +68,15 @@ export default function ActivosInmobiliarios() {
     setShowForm(false);
   };
 
-  const estadoBadge = (estado: Inmueble['estado']) =>
-    ({
-      EN_ESTUDIO: 'bg-yellow-500/20 text-yellow-500',
-      ARRAS: 'bg-orange-500/20 text-orange-500',
-      COMPRADO: 'bg-green-500/20 text-green-500',
-      VENDIDO: 'bg-blue-500/20 text-blue-500',
-    }[estado] || 'bg-gray-500/20 text-gray-400');
+const estadoBadge = (estado: Inmueble['estado']) =>
+  ({
+    EN_ESTUDIO: 'bg-yellow-500/20 text-yellow-500',
+    ARRAS: 'bg-orange-500/20 text-orange-500',
+    COMPRADO: 'bg-green-500/20 text-green-500',
+    OFERTADO: 'bg-purple-500/20 text-purple-500',
+    RESERVADO: 'bg-blue-500/20 text-cyan-400',
+    VENDIDO: 'bg-gray-500/20 text-blue-400',
+  }[estado] || 'bg-gray-500/20 text-gray-400');
 
   const precioFmt = (n: number | null) =>
     typeof n === 'number' ? `€${n.toLocaleString()}` : '-';
@@ -455,9 +457,11 @@ return (
                 className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
               >
                 <option value="EN_ESTUDIO">En Estudio</option>
-                <option value="ARRAS">Arras</option>
-                <option value="COMPRADO">Comprado</option>
-                <option value="VENDIDO">Vendido</option>
+		<option value="ARRAS">Arras</option>
+		<option value="COMPRADO">Comprado</option>
+		<option value="OFERTADO">Ofertado</option>
+		<option value="RESERVADO">Reservado</option>
+		<option value="VENDIDO">Vendido</option>
               </select>
             </div>
 
