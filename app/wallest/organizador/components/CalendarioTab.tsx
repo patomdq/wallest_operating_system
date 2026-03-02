@@ -96,7 +96,8 @@ export default function CalendarioTab() {
 
  const handleConnectGoogle = async () => {
   const { data: { user } } = await supabase.auth.getUser();
-  const authUrl = await getGoogleAuthUrl(user?.id || '');
+  const userId = user?.id || 'fd619f67-92a0-48d6-b05a-36e8c5fcf521';
+  const authUrl = await getGoogleAuthUrl(userId);
   window.location.href = authUrl;
 };
 
