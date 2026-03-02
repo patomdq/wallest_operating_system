@@ -353,9 +353,169 @@ export default function CalculadoraRentabilidad() {
     setUrl('');
   };
 
-  const handleImprimir = () => {
-    window.print();
-  };
+const handleImprimir = () => {
+  import('jspdf').then(({ jsPDF }) => {
+    const doc = new jsPDF();
+    const naranja = [230, 126, 34] as [number, number, number];
+    const negro = [0, 0, 0] as [number, number, number];
+    const gris = [100, 100, 100] as [number, number, number];
+    const grisClaro = [240, 240, 240] as [number, number, number];
+    let y = 20;
+
+    // Header
+    doc.setDrawColor(...naranja);
+    doc.setLineWidth(1.5);
+    doc.line(14, y, 196, y);
+    y += 8;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(28);
+    doc.setTextColor(...negro);
+    doc.text('Wallest', 14, y);
+    y += 8;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(...gris);
+    doc.text('Hasu Activos Inmobiliarios SL', 14, y);
+    y += 6;
+
+    doc.setDrawColor(...naranja);
+    doc.setLineWidth(0.5);
+    doc.line(14, y, 196, y);
+    y += 10;
+
+    // Título del proyecto
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(...negro);
+    doc.text(`${nombre || 'Proyecto'} — Calculadora de Rentabilidad`, 14, y);
+    y += 12;
+
+    // Datos del proyecto
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...gris);
+    if (direccion) { doc.text(`Dirección: ${direccion}`, 14, y); y += 6; }
+    if (ciudad) { doc.text(`Ciudad: ${ciudad}`, 14, y); y += 6; }
+    if (tipoInmueble) { doc.text(`Tipo: ${tipoInmueble}`, 14, y); y += 6; }
+    doc.text(`Duración estimada: ${duracionMeses} meses`, 14, y);
+    y += 10;
+
+    // Tabla de gastos — encabezado
+    doc.setFillColor(...grisClaro);
+    doc.rect(14, y, 182, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...negro);
+    doc.text('Concepto', 16, y + 5.5);
+    doc.text('Estimado', 130, y + 5.5, { align: 'right' });
+    doc.text('Real', 196, y + 5.5, { align: 'right' });
+    y += 8;
+
+    // Filas de gastos
+    doc.setFont('helvetica', 'normal');
+    CONCEPTOS_GASTOS.forEach((concepto) => {
+      const est = gastos[concepto.id].estimado;
+      const rea = gastos[concepto.id].real;
+      if (est === 0 && rea === 0) return;
+
+      if (y > 270) { doc.addPage(); y = 20; }
+
+      doc.setTextColor(...negro);
+      doc.text(concepto.nombre, 16, y + 5);
+      doc.text(est > 0 ? formatEuro(est) : '-', 130, y + 5, { align: 'right' });
+      doc.text(rea > 0 ? formatEuro(rea) : '-', 196, y + 5, { align: 'right' });
+
+      doc.setDrawColor(220, 220, 220);
+      doc.line(14, y + 8, 196, y + 8);
+      y += 9;
+    });
+
+    // Total inversión
+    y += 2;
+    doc.setFillColor(...grisClaro);
+    doc.rect(14, y, 182, 9, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...naranja);
+    doc.text('TOTAL INVERSIÓN', 16, y + 6);
+    doc.text(formatEuro(resultados.totalInversionEstimado), 130, y + 6, { align: 'right' });
+    doc.text(formatEuro(resultados.totalInversionReal), 196, y + 6, { align: 'right' });
+    y += 18;
+
+    // Escenarios
+    if (y > 230) { doc.addPage(); y = 20; }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(...negro);
+    doc.text('Escenarios de Rentabilidad', 14, y);
+    y += 8;
+
+    // Tabla escenarios — encabezado
+    doc.setFillColor(...grisClaro);
+    doc.rect(14, y, 182, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...negro);
+    doc.text('Escenario', 16, y + 5.5);
+    doc.text('Precio Venta', 90, y + 5.5, { align: 'right' });
+    doc.text('Beneficio', 130, y + 5.5, { align: 'right' });
+    doc.text('Rentabilidad', 163, y + 5.5, { align: 'right' });
+    doc.text('Rent. Anual', 196, y + 5.5, { align: 'right' });
+    y += 8;
+
+    const escenarios = [
+      { nombre: 'Pesimista', pv: precioVentaPesimista, ben: resultados.beneficioPesimista, rent: resultados.rentabilidadPesimista, anual: resultados.rentabilidadAnualizadaPesimista },
+      { nombre: 'Realista', pv: precioVentaRealista, ben: resultados.beneficioRealista, rent: resultados.rentabilidadRealista, anual: resultados.rentabilidadAnualizadaRealista },
+      { nombre: 'Optimista', pv: precioVentaOptimista, ben: resultados.beneficioOptimista, rent: resultados.rentabilidadOptimista, anual: resultados.rentabilidadAnualizadaOptimista },
+    ];
+
+    doc.setFont('helvetica', 'normal');
+    escenarios.forEach((esc) => {
+      doc.setTextColor(...negro);
+      doc.text(esc.nombre, 16, y + 5);
+      doc.text(formatEuro(esc.pv), 90, y + 5, { align: 'right' });
+      const color = esc.ben >= 0 ? [22, 163, 74] as [number,number,number] : [220, 38, 38] as [number,number,number];
+      doc.setTextColor(...color);
+      doc.text(formatEuro(esc.ben), 130, y + 5, { align: 'right' });
+      doc.text(`${esc.rent.toFixed(2)}%`, 163, y + 5, { align: 'right' });
+      doc.text(`${esc.anual.toFixed(2)}%`, 196, y + 5, { align: 'right' });
+      doc.setDrawColor(220, 220, 220);
+      doc.setTextColor(...negro);
+      doc.line(14, y + 8, 196, y + 8);
+      y += 9;
+    });
+
+    // Observaciones
+    if (observaciones && observaciones.trim()) {
+      y += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...negro);
+      doc.text('Observaciones', 14, y);
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      const lines = doc.splitTextToSize(observaciones, 180);
+      doc.text(lines, 14, y);
+      y += lines.length * 5 + 6;
+    }
+
+    // Pie de página
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...gris);
+      doc.text(`Wallest — Hasu Activos Inmobiliarios SL`, 14, 290);
+      doc.text(`${new Date().toLocaleDateString('es-ES')}`, 196, 290, { align: 'right' });
+    }
+
+    doc.save(`${nombre || 'proyecto'}-rentabilidad.pdf`);
+  });
+};
 
   const handleEditarProyecto = (proyecto: ProyectoRentabilidad) => {
     // Cargar datos del proyecto en el formulario
