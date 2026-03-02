@@ -62,7 +62,9 @@ const SCOPES = [
 /**
  * Genera la URL de autenticación de Google OAuth2
  */
-export function getGoogleAuthUrl(): string {
+export async function getGoogleAuthUrl(userId: string): Promise<string> {
+  const state = `${generateState()}_${userId}`;
+  
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: REDIRECT_URI,
@@ -70,7 +72,7 @@ export function getGoogleAuthUrl(): string {
     scope: SCOPES,
     access_type: 'offline',
     prompt: 'consent',
-    state: generateState()
+    state
   });
 
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
@@ -87,7 +89,7 @@ function generateState(): string {
 /**
  * Intercambia el código de autorización por tokens
  */
-export async function exchangeCodeForTokens(code: string): Promise<GoogleCalendarToken | null> {
+export async function exchangeCodeForTokens(code: string, userId: string): Promise<GoogleCalendarToken | null> {
   try {
     // 🔍 LOGGING: Verificar que las variables NO sean undefined
     console.log('🔐 [OAuth Exchange] Iniciando intercambio de código por tokens');
@@ -145,8 +147,7 @@ export async function exchangeCodeForTokens(code: string): Promise<GoogleCalenda
     const tokenExpiry = new Date(Date.now() + expiresIn * 1000).toISOString();
 
     // Obtener usuario actual
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('No authenticated user');
+    const user = { id: userId };
 
     // Guardar tokens en Supabase
     const tokenData = {

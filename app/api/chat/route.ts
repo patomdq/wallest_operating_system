@@ -33,6 +33,18 @@ ACCIONES DISPONIBLES — responde ÚNICAMENTE con el JSON exacto cuando el usuar
 3. ACTUALIZAR ITEM DE PLANIFICADOR:
 {"action":"update_item","data":{"item_id":"","coste":0,"proveedor":"","fecha_compra":"","fecha_entrega":"","fecha_instalacion":"","nota":""}}
 
+4. CREAR TAREA:
+{"action":"insert_tarea","data":{"titulo":"","descripcion":"","prioridad":"Media","fecha_limite":"YYYY-MM-DD","estado":"Pendiente"}}
+
+5. ACTUALIZAR ESTADO DE TAREA:
+{"action":"update_tarea_estado","data":{"tarea_id":"","estado":"Pendiente"}}
+
+6. ACTUALIZAR TAREA:
+{"action":"update_tarea","data":{"tarea_id":"","titulo":"","descripcion":"","prioridad":"","fecha_limite":"YYYY-MM-DD","estado":""}}
+
+7. CREAR EVENTO EN CALENDARIO:
+{"action":"insert_evento","data":{"titulo":"","descripcion":"","fecha_inicio":"YYYY-MM-DDTHH:MM:00+01:00","fecha_fin":"YYYY-MM-DDTHH:MM:00+01:00","recordatorio":false,"reforma_id":null}}
+
 VALORES VÁLIDOS:
 - tipo movimiento: "Gasto" o "Ingreso"
 - categoria movimiento: Materiales, Servicios, Impuestos, Sueldos, Honorarios, Suministros, Seguros, Gestoría, Notaría, Registro, Comunidad, Legal, Contable, Marketing, Comisiones, Arras, Ventas, Saldo Inicial, Otros
@@ -41,6 +53,9 @@ VALORES VÁLIDOS:
 - proyecto_id para Olula: "347d78d9-1de8-4639-8853-8262b0b962e9"
 - estado partida: "pendiente", "en_curso", "ok"
 - fecha: usa FECHA_HOY si no especifican
+- prioridad tarea: "Alta", "Media", "Baja"
+- estado tarea: "Pendiente", "En curso", "Completada"
+- tarea_id: búscalo en TAREAS por el título que mencione el usuario
 
 REGLAS:
 - Si falta monto o concepto en un movimiento, pregunta antes de generar el JSON
@@ -68,7 +83,8 @@ function needsContext(message: string): boolean {
     'proveedor', 'hassan', 'material',
     'finanza', 'movimiento', 'ingreso', 'egreso',
     'resumen', 'estado', 'situación', 'empresa', 'hasu', 'wallest',
-    'registra', 'anota', 'añade', 'carga', 'apunta', 'actualiza', 'cambia', 'marca'
+    'registra', 'anota', 'añade', 'carga', 'apunta', 'actualiza', 'cambia', 'marca',
+    'evento', 'reunión', 'visita', 'cita', 'agenda', 'calendario',
   ];
   const lower = message.toLowerCase();
   return keywords.some(k => lower.includes(k));
@@ -88,6 +104,8 @@ async function getContext() {
     { data: comercializacion },
     { data: finanzas },
     { data: saldo_actual },
+    { data: tareas },
+    { data: eventos },
   ] = await Promise.all([
     supabase.from('inmuebles').select('*'),
     supabase.from('movimientos_empresa').select('*'),
@@ -99,6 +117,8 @@ async function getContext() {
     supabase.from('comercializacion').select('*'),
     supabase.from('finanzas').select('*'),
     supabase.from('saldo_actual').select('*'),
+    supabase.from('tareas_globales').select('*'),
+    supabase.from('eventos_globales').select('*'),
   ]);
 
   return `
@@ -114,6 +134,8 @@ LEADS: ${JSON.stringify(leads)}
 PROVEEDORES: ${JSON.stringify(proveedores)}
 COMERCIALIZACION: ${JSON.stringify(comercializacion)}
 FINANZAS: ${JSON.stringify(finanzas)}
+TAREAS: ${JSON.stringify(tareas)}
+EVENTOS: ${JSON.stringify(eventos)}
 === FIN ===`;
 }
 
@@ -173,6 +195,50 @@ async function handleAction(action: string, data: Record<string, unknown>): Prom
     return `Item actualizado correctamente.`;
   }
 
+if (action === 'insert_tarea') {
+  const { error } = await supabase
+    .from('tareas_globales')
+    .insert([data]);
+
+  if (error) return `Error al crear la tarea: ${error.message}`;
+  return `Tarea creada: "${data.titulo}" — ${data.prioridad}, ${data.fecha_limite || 'sin fecha límite'}.`;
+}
+
+if (action === 'update_tarea_estado') {
+  const { error } = await supabase
+    .from('tareas_globales')
+    .update({ estado: data.estado })
+    .eq('id', data.tarea_id);
+
+  if (error) return `Error al actualizar la tarea: ${error.message}`;
+  return `Tarea actualizada a "${data.estado}".`;
+}
+
+if (action === 'update_tarea') {
+  const updates: Record<string, unknown> = {};
+  if (data.titulo) updates.titulo = data.titulo;
+  if (data.descripcion) updates.descripcion = data.descripcion;
+  if (data.prioridad) updates.prioridad = data.prioridad;
+  if (data.fecha_limite) updates.fecha_limite = data.fecha_limite;
+  if (data.estado) updates.estado = data.estado;
+
+  const { error } = await supabase
+    .from('tareas_globales')
+    .update(updates)
+    .eq('id', data.tarea_id);
+
+  if (error) return `Error al actualizar la tarea: ${error.message}`;
+  return `Tarea actualizada correctamente.`;
+}
+
+if (action === 'insert_evento') {
+  const { error } = await supabase
+    .from('eventos_globales')
+    .insert([data]);
+
+  if (error) return `Error al crear el evento: ${error.message}`;
+  return `Evento creado: "${data.titulo}" — ${data.fecha_inicio}.`;
+}
   return 'Acción no reconocida.';
 }
 

@@ -94,10 +94,11 @@ export default function CalendarioTab() {
     setGoogleSyncStatus(status);
   };
 
-  const handleConnectGoogle = () => {
-    const authUrl = getGoogleAuthUrl();
-    window.location.href = authUrl;
-  };
+ const handleConnectGoogle = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  const authUrl = await getGoogleAuthUrl(user?.id || '');
+  window.location.href = authUrl;
+};
 
   const handleDisconnectGoogle = async () => {
     if (!confirm('¿Deseas desconectar tu cuenta de Google Calendar? Los eventos no se eliminarán.')) return;
