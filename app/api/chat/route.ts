@@ -232,11 +232,40 @@ if (action === 'update_tarea') {
 }
 
 if (action === 'insert_evento') {
-  const { error } = await supabase
+  const { data: eventoInsertado, error } = await supabase
     .from('eventos_globales')
-    .insert([data]);
+    .insert([data])
+    .select()
+    .single();
 
   if (error) return `Error al crear el evento: ${error.message}`;
+
+  try {
+    const { data: tokenData } = await supabase
+      .from('google_calendar_tokens')
+      .select('access_token')
+      .eq('user_id', 'fd619f67-92a0-48d6-b05a-36e8c5fcf521')
+      .single();
+
+    if (tokenData?.access_token) {
+      await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          summary: data.titulo,
+          description: data.descripcion || '',
+          start: { dateTime: data.fecha_inicio, timeZone: 'Europe/Madrid' },
+          end: { dateTime: data.fecha_fin, timeZone: 'Europe/Madrid' },
+        }),
+      });
+    }
+  } catch (e) {
+    console.error('Error sincronizando con Google:', e);
+  }
+
   return `Evento creado: "${data.titulo}" — ${data.fecha_inicio}.`;
 }
   return 'Acción no reconocida.';
