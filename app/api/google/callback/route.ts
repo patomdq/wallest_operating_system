@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
   // Extraer userId del state (formato: randomstring_userId)
   const parts = state?.split('_') || [];
-  const userId = parts.slice(2).join('_') || '';
+  const userId = state?.substring(state.indexOf('_') + 1) || '';
 
   if (!userId) {
     return NextResponse.redirect(
