@@ -6,6 +6,8 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const error = searchParams.get('error');
   const state = searchParams.get('state');
+  console.log('CALLBACK STATE:', state);
+  console.log('CALLBACK CODE:', code?.substring(0, 20));
 
   if (error) {
     return NextResponse.redirect(
