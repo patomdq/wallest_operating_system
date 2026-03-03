@@ -46,7 +46,7 @@ useEffect(() => {
     await loadEventos();
     await loadReformas();
     
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = { id: 'fd619f67-92a0-48d6-b05a-36e8c5fcf521' };
     if (user) {
       const response = await fetch(`/api/google/status?userId=${user.id}`);
       const data = await response.json();
@@ -113,7 +113,7 @@ useEffect(() => {
   };
 
 const loadGoogleSyncStatus = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = { id: 'fd619f67-92a0-48d6-b05a-36e8c5fcf521' };
   if (!user) return;
   
   const response = await fetch(`/api/google/status?userId=${user.id}`);
@@ -129,7 +129,7 @@ const loadGoogleSyncStatus = async () => {
 };
 
  const handleConnectGoogle = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = { id: 'fd619f67-92a0-48d6-b05a-36e8c5fcf521' };
   const userId = user?.id || 'fd619f67-92a0-48d6-b05a-36e8c5fcf521';
   const authUrl = await getGoogleAuthUrl(userId);
   window.location.href = authUrl;
