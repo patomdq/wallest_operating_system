@@ -64,10 +64,18 @@ useEffect(() => {
     const googleError = searchParams?.get('google_error');
     
     if (googleConnected === 'true') {
-      alert('✅ Google Calendar conectado correctamente.');
-    } else if (googleError) {
-      alert(`❌ Error: ${googleError}`);
-    }
+  alert('✅ Google Calendar conectado correctamente.');
+  const response = await fetch(`/api/google/status?userId=${user.id}`);
+  const data = await response.json();
+  setGoogleSyncStatus({
+    isConnected: data.isConnected,
+    lastSync: null,
+    totalEvents: 0,
+    syncedEvents: 0,
+    pendingEvents: 0,
+    errorEvents: 0
+  });
+}
   };
   
   init();
