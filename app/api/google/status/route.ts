@@ -17,16 +17,13 @@ export async function GET(request: NextRequest) {
       .eq('user_id', userId)
       .single();
 
-    if (!tokenData) return NextResponse.json({ isConnected: false });
+    if (!tokenData?.refresh_token) return NextResponse.json({ isConnected: false });
 
-    // Verificar si el token está por expirar
     const expiryTime = new Date(tokenData.token_expiry).getTime();
-    const now = Date.now();
-    const fiveMinutes = 5 * 60 * 1000;
+    const isExpired = expiryTime - Date.now() < 60 * 60 * 1000;
 
-    if (expiryTime - now < 60 * 60 * 1000 && tokenData.refresh_token) {
-      // Refrescar token
-      const response = await fetch('https://oauth2.googleapis.com/token', {
+    if (isExpired) {
+      const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -37,19 +34,18 @@ export async function GET(request: NextRequest) {
         }),
       });
 
-      if (response.ok) {
-        console.log('REFRESH STATUS:', response.status);
-        const data = await response.json();
-        const newExpiry = new Date(Date.now() + data.expires_in * 1000).toISOString();
-        
-        await supabase
-          .from('google_calendar_tokens')
-          .update({ access_token: data.access_token, token_expiry: newExpiry })
-          .eq('user_id', userId);
-} else {
-  const errData = await response.json();
-  console.log('REFRESH ERROR:', JSON.stringify(errData));
-}
+      console.log('REFRESH STATUS:', refreshResponse.status);
+
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json();
+        await supabase.from('google_calendar_tokens').update({
+          access_token: refreshData.access_token,
+          token_expiry: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
+        }).eq('user_id', userId);
+      } else {
+        const errData = await refreshResponse.json();
+        console.log('REFRESH ERROR:', JSON.stringify(errData));
+        return NextResponse.json({ isConnected: false });
       }
     }
 
