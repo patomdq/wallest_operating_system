@@ -102,9 +102,11 @@ VALORES VÁLIDOS:
 - estado tarea: "Pendiente", "En curso", "Completada"
 - estado lead: "Nuevo", "Contactado", "En Oferta", "Cerrado"
 - tarea_id: búscalo en TAREAS por el título que mencione el usuario
-- evento_id: búscalo en EVENTOS por el título que mencione el usuario
+- evento_id: búscalo en EVENTOS por el título, usa SIEMPRE el campo "id" UUID completo, nunca un número
 - proveedor_id: búscalo en PROVEEDORES por el nombre que mencione el usuario
 - lead_id: búscalo en LEADS por el nombre que mencione el usuario
+
+- evento_id: SIEMPRE usa el UUID completo del evento (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), nunca uses números de posición
 
 REGLAS:
 - Si falta monto o concepto en un movimiento, pregunta antes de generar el JSON
