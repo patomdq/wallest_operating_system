@@ -139,6 +139,48 @@ EVENTOS: ${JSON.stringify(eventos)}
 === FIN ===`;
 }
 
+async function getValidGoogleToken(): Promise<string | null> {
+  try {
+    const { data: tokenData } = await supabase
+      .from('google_calendar_tokens')
+      .select('access_token, refresh_token, token_expiry')
+      .eq('user_id', 'fd619f67-92a0-48d6-b05a-36e8c5fcf521')
+      .single();
+
+    if (!tokenData) return null;
+
+    const expiryTime = new Date(tokenData.token_expiry).getTime();
+    const isExpired = expiryTime - Date.now() < 60 * 60 * 1000;
+
+    if (isExpired && tokenData.refresh_token) {
+      const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          refresh_token: tokenData.refresh_token,
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+          grant_type: 'refresh_token',
+        }),
+      });
+
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json();
+        await supabase.from('google_calendar_tokens').update({
+          access_token: refreshData.access_token,
+          token_expiry: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
+        }).eq('user_id', 'fd619f67-92a0-48d6-b05a-36e8c5fcf521');
+        return refreshData.access_token;
+      }
+      return null;
+    }
+
+    return tokenData.access_token;
+  } catch {
+    return null;
+  }
+}
+
 async function handleAction(action: string, data: Record<string, unknown>): Promise<string> {
   if (action === 'insert_movimiento') {
     const { error } = await supabase
@@ -195,79 +237,73 @@ async function handleAction(action: string, data: Record<string, unknown>): Prom
     return `Item actualizado correctamente.`;
   }
 
-if (action === 'insert_tarea') {
-  const { error } = await supabase
-    .from('tareas_globales')
-    .insert([data]);
+  if (action === 'insert_tarea') {
+    const { error } = await supabase
+      .from('tareas_globales')
+      .insert([data]);
 
-  if (error) return `Error al crear la tarea: ${error.message}`;
-  return `Tarea creada: "${data.titulo}" — ${data.prioridad}, ${data.fecha_limite || 'sin fecha límite'}.`;
-}
-
-if (action === 'update_tarea_estado') {
-  const { error } = await supabase
-    .from('tareas_globales')
-    .update({ estado: data.estado })
-    .eq('id', data.tarea_id);
-
-  if (error) return `Error al actualizar la tarea: ${error.message}`;
-  return `Tarea actualizada a "${data.estado}".`;
-}
-
-if (action === 'update_tarea') {
-  const updates: Record<string, unknown> = {};
-  if (data.titulo) updates.titulo = data.titulo;
-  if (data.descripcion) updates.descripcion = data.descripcion;
-  if (data.prioridad) updates.prioridad = data.prioridad;
-  if (data.fecha_limite) updates.fecha_limite = data.fecha_limite;
-  if (data.estado) updates.estado = data.estado;
-
-  const { error } = await supabase
-    .from('tareas_globales')
-    .update(updates)
-    .eq('id', data.tarea_id);
-
-  if (error) return `Error al actualizar la tarea: ${error.message}`;
-  return `Tarea actualizada correctamente.`;
-}
-
-if (action === 'insert_evento') {
-  const { data: eventoInsertado, error } = await supabase
-    .from('eventos_globales')
-    .insert([data])
-    .select()
-    .single();
-
-  if (error) return `Error al crear el evento: ${error.message}`;
-
-  try {
-    const { data: tokenData } = await supabase
-      .from('google_calendar_tokens')
-      .select('access_token')
-      .eq('user_id', 'fd619f67-92a0-48d6-b05a-36e8c5fcf521')
-      .single();
-
-    if (tokenData?.access_token) {
-      await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${tokenData.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          summary: data.titulo,
-          description: data.descripcion || '',
-          start: { dateTime: data.fecha_inicio, timeZone: 'Europe/Madrid' },
-          end: { dateTime: data.fecha_fin, timeZone: 'Europe/Madrid' },
-        }),
-      });
-    }
-  } catch (e) {
-    console.error('Error sincronizando con Google:', e);
+    if (error) return `Error al crear la tarea: ${error.message}`;
+    return `Tarea creada: "${data.titulo}" — ${data.prioridad}, ${data.fecha_limite || 'sin fecha límite'}.`;
   }
 
-  return `Evento creado: "${data.titulo}" — ${data.fecha_inicio}.`;
-}
+  if (action === 'update_tarea_estado') {
+    const { error } = await supabase
+      .from('tareas_globales')
+      .update({ estado: data.estado })
+      .eq('id', data.tarea_id);
+
+    if (error) return `Error al actualizar la tarea: ${error.message}`;
+    return `Tarea actualizada a "${data.estado}".`;
+  }
+
+  if (action === 'update_tarea') {
+    const updates: Record<string, unknown> = {};
+    if (data.titulo) updates.titulo = data.titulo;
+    if (data.descripcion) updates.descripcion = data.descripcion;
+    if (data.prioridad) updates.prioridad = data.prioridad;
+    if (data.fecha_limite) updates.fecha_limite = data.fecha_limite;
+    if (data.estado) updates.estado = data.estado;
+
+    const { error } = await supabase
+      .from('tareas_globales')
+      .update(updates)
+      .eq('id', data.tarea_id);
+
+    if (error) return `Error al actualizar la tarea: ${error.message}`;
+    return `Tarea actualizada correctamente.`;
+  }
+
+  if (action === 'insert_evento') {
+    const { error } = await supabase
+      .from('eventos_globales')
+      .insert([data]);
+
+    if (error) return `Error al crear el evento: ${error.message}`;
+
+    try {
+      const accessToken = await getValidGoogleToken();
+      if (accessToken) {
+        await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            summary: data.titulo,
+            description: data.descripcion || '',
+            start: { dateTime: data.fecha_inicio, timeZone: 'Europe/Madrid' },
+            end: { dateTime: data.fecha_fin, timeZone: 'Europe/Madrid' },
+          }),
+        });
+      }
+    } catch (e) {
+      console.error('Error sincronizando con Google:', e);
+    }
+
+    return `Evento creado: "${data.titulo}" — ${data.fecha_inicio}.`;
+  }
+
   return 'Acción no reconocida.';
 }
 
