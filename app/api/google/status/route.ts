@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       });
 
       if (response.ok) {
+        console.log('REFRESH STATUS:', response.status);
         const data = await response.json();
         const newExpiry = new Date(Date.now() + data.expires_in * 1000).toISOString();
         
@@ -45,6 +46,10 @@ export async function GET(request: NextRequest) {
           .from('google_calendar_tokens')
           .update({ access_token: data.access_token, token_expiry: newExpiry })
           .eq('user_id', userId);
+} else {
+  const errData = await response.json();
+  console.log('REFRESH ERROR:', JSON.stringify(errData));
+}
       }
     }
 
