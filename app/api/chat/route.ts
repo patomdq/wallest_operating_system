@@ -138,6 +138,7 @@ function needsContext(message: string): boolean {
     'resumen', 'estado', 'situación', 'empresa', 'hasu', 'wallest',
     'registra', 'anota', 'añade', 'carga', 'apunta', 'actualiza', 'cambia', 'marca',
     'evento', 'reunión', 'visita', 'cita', 'agenda', 'calendario',
+    'hoy', 'mañana', 'ayer', 'semana', 'fecha', 'cuando', 'hoy?', 'reunion',
   ];
   const lower = message.toLowerCase();
   return keywords.some(k => lower.includes(k));
