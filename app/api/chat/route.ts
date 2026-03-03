@@ -154,6 +154,8 @@ async function getValidGoogleToken(): Promise<string | null> {
 
     if (isExpired && tokenData.refresh_token) {
       const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
+      const googleResult = await fetch(...);
+      console.log('GOOGLE RESPONSE:', googleResult.status);
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -165,6 +167,7 @@ async function getValidGoogleToken(): Promise<string | null> {
       });
 
       if (refreshResponse.ok) {
+        console.log('REFRESH OK, nuevo token:', refreshData.access_token?.substring(0, 20));
         const refreshData = await refreshResponse.json();
         await supabase.from('google_calendar_tokens').update({
           access_token: refreshData.access_token,
