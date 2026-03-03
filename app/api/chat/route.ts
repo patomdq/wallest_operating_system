@@ -113,6 +113,8 @@ REGLAS:
 - Si el usuario menciona una partida por nombre, búscala en PARTIDAS y usa su id
 - Si el usuario menciona un item por nombre, búscalo en ITEMS y usa su id
 - Solo un JSON por respuesta, nunca texto adicional junto al JSON
+- NUNCA inventes eventos, tareas, leads ni ningún dato — usa SOLO lo que aparece en el contexto
+- Si no encuentras un evento por nombre, dilo claramente en lugar de inventar
 
 FORMATO RESPUESTAS NORMALES:
 - Sin markdown complejo
