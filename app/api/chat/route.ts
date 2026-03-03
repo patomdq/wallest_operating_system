@@ -6,11 +6,6 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 const SYSTEM_PROMPT = `Eres el asistente operativo de Wallest (Hasu Activos Inmobiliarios SL), empresa española de compraventa y reforma de inmuebles.
 
 PERSONALIDAD: Directo, profesional, hablas como co-CEO no como asistente. Dices las cosas como son, sin rodeos, sin exagerar. Español de España en todo momento.
@@ -42,8 +37,53 @@ ACCIONES DISPONIBLES — responde ÚNICAMENTE con el JSON exacto cuando el usuar
 6. ACTUALIZAR TAREA:
 {"action":"update_tarea","data":{"tarea_id":"","titulo":"","descripcion":"","prioridad":"","fecha_limite":"YYYY-MM-DD","estado":""}}
 
-7. CREAR EVENTO EN CALENDARIO:
+7. CREAR EVENTO:
 {"action":"insert_evento","data":{"titulo":"","descripcion":"","fecha_inicio":"YYYY-MM-DDTHH:MM:00+01:00","fecha_fin":"YYYY-MM-DDTHH:MM:00+01:00","recordatorio":false,"reforma_id":null}}
+
+8. EDITAR EVENTO:
+{"action":"update_evento","data":{"evento_id":"","titulo":"","descripcion":"","fecha_inicio":"YYYY-MM-DDTHH:MM:00+01:00","fecha_fin":"YYYY-MM-DDTHH:MM:00+01:00"}}
+
+9. ELIMINAR EVENTO:
+{"action":"delete_evento","data":{"evento_id":""}}
+
+10. CREAR PROVEEDOR:
+{"action":"insert_proveedor","data":{"nombre":"","tipo":"Activo","rubro":"","contacto":"","cif":"","email":"","telefono":""}}
+
+11. EDITAR PROVEEDOR:
+{"action":"update_proveedor","data":{"proveedor_id":"","nombre":"","tipo":"","rubro":"","contacto":"","email":"","telefono":""}}
+
+12. ELIMINAR PROVEEDOR:
+{"action":"delete_proveedor","data":{"proveedor_id":""}}
+
+13. CREAR MATERIAL:
+{"action":"insert_material","data":{"nombre":"","proveedor_id":null,"costo_unitario":0,"cantidad":0,"stock_minimo":0}}
+
+14. EDITAR MATERIAL:
+{"action":"update_material","data":{"material_id":"","nombre":"","costo_unitario":0,"cantidad":0,"stock_minimo":0}}
+
+15. ELIMINAR MATERIAL:
+{"action":"delete_material","data":{"material_id":""}}
+
+16. CREAR LEAD:
+{"action":"insert_lead","data":{"nombre":"","email":"","telefono":"","estado":"Nuevo","notas":""}}
+
+17. EDITAR LEAD:
+{"action":"update_lead","data":{"lead_id":"","nombre":"","email":"","telefono":"","estado":"","notas":""}}
+
+18. ELIMINAR LEAD:
+{"action":"delete_lead","data":{"lead_id":""}}
+
+19. CREAR COMERCIALIZACIÓN:
+{"action":"insert_comercializacion","data":{"inmueble_id":"","agente":"","precio_salida":0,"precio_quiebre":0,"precio_minimo":0,"estado":"Activo","fecha_publicacion":"YYYY-MM-DD","en_portales":false}}
+
+20. EDITAR COMERCIALIZACIÓN:
+{"action":"update_comercializacion","data":{"comercializacion_id":"","agente":"","precio_salida":0,"precio_quiebre":0,"precio_minimo":0,"estado":"","en_portales":false}}
+
+21. CREAR TRANSACCIÓN:
+{"action":"insert_transaccion","data":{"inmueble_id":"","comprador":"","precio_final":0,"fecha_cierre":"YYYY-MM-DD","notas":""}}
+
+22. CREAR SIMULACIÓN CALCULADORA:
+{"action":"insert_simulacion","data":{"nombre":"","direccion":"","ciudad":"","tipo_inmueble":"","duracion_meses":12,"precio_compra_estimado":0,"reforma_estimado":0,"gastos_compraventa_estimado":0,"itp_estimado":0,"precio_venta_pesimista":0,"precio_venta_realista":0,"precio_venta_optimista":0,"observaciones":""}}
 
 VALORES VÁLIDOS:
 - tipo movimiento: "Gasto" o "Ingreso"
@@ -55,12 +95,16 @@ VALORES VÁLIDOS:
 - fecha: usa FECHA_HOY si no especifican
 - prioridad tarea: "Alta", "Media", "Baja"
 - estado tarea: "Pendiente", "En curso", "Completada"
+- estado lead: "Nuevo", "Contactado", "En Oferta", "Cerrado"
 - tarea_id: búscalo en TAREAS por el título que mencione el usuario
+- evento_id: búscalo en EVENTOS por el título que mencione el usuario
+- proveedor_id: búscalo en PROVEEDORES por el nombre que mencione el usuario
+- lead_id: búscalo en LEADS por el nombre que mencione el usuario
 
 REGLAS:
 - Si falta monto o concepto en un movimiento, pregunta antes de generar el JSON
-- Si el usuario menciona una partida por nombre (ej: "electricidad"), búscala en PARTIDAS y usa su id
-- Si el usuario menciona un item por nombre (ej: "cuadro eléctrico"), búscalo en ITEMS y usa su id
+- Si el usuario menciona una partida por nombre, búscala en PARTIDAS y usa su id
+- Si el usuario menciona un item por nombre, búscalo en ITEMS y usa su id
 - Solo un JSON por respuesta, nunca texto adicional junto al JSON
 
 FORMATO RESPUESTAS NORMALES:
@@ -303,7 +347,125 @@ async function handleAction(action: string, data: Record<string, unknown>): Prom
 
     return `Evento creado: "${data.titulo}" — ${data.fecha_inicio}.`;
   }
+if (action === 'update_evento') {
+    const updates: Record<string, unknown> = {};
+    if (data.titulo) updates.titulo = data.titulo;
+    if (data.descripcion) updates.descripcion = data.descripcion;
+    if (data.fecha_inicio) updates.fecha_inicio = data.fecha_inicio;
+    if (data.fecha_fin) updates.fecha_fin = data.fecha_fin;
+    const { error } = await supabase.from('eventos_globales').update(updates).eq('id', data.evento_id);
+    if (error) return `Error al editar el evento: ${error.message}`;
+    return `Evento actualizado correctamente.`;
+  }
 
+  if (action === 'delete_evento') {
+    const { error } = await supabase.from('eventos_globales').delete().eq('id', data.evento_id);
+    if (error) return `Error al eliminar el evento: ${error.message}`;
+    return `Evento eliminado correctamente.`;
+  }
+
+  if (action === 'insert_proveedor') {
+    const { error } = await supabase.from('proveedores').insert([data]);
+    if (error) return `Error al crear el proveedor: ${error.message}`;
+    return `Proveedor "${data.nombre}" creado correctamente.`;
+  }
+
+  if (action === 'update_proveedor') {
+    const updates: Record<string, unknown> = {};
+    if (data.nombre) updates.nombre = data.nombre;
+    if (data.tipo) updates.tipo = data.tipo;
+    if (data.rubro) updates.rubro = data.rubro;
+    if (data.contacto) updates.contacto = data.contacto;
+    if (data.email) updates.email = data.email;
+    if (data.telefono) updates.telefono = data.telefono;
+    const { error } = await supabase.from('proveedores').update(updates).eq('id', data.proveedor_id);
+    if (error) return `Error al editar el proveedor: ${error.message}`;
+    return `Proveedor actualizado correctamente.`;
+  }
+
+  if (action === 'delete_proveedor') {
+    const { error } = await supabase.from('proveedores').delete().eq('id', data.proveedor_id);
+    if (error) return `Error al eliminar el proveedor: ${error.message}`;
+    return `Proveedor eliminado correctamente.`;
+  }
+
+  if (action === 'insert_material') {
+    const { error } = await supabase.from('stock_materiales').insert([data]);
+    if (error) return `Error al crear el material: ${error.message}`;
+    return `Material "${data.nombre}" creado correctamente.`;
+  }
+
+  if (action === 'update_material') {
+    const updates: Record<string, unknown> = {};
+    if (data.nombre) updates.nombre = data.nombre;
+    if (data.costo_unitario) updates.costo_unitario = data.costo_unitario;
+    if (data.cantidad) updates.cantidad = data.cantidad;
+    if (data.stock_minimo) updates.stock_minimo = data.stock_minimo;
+    const { error } = await supabase.from('stock_materiales').update(updates).eq('id', data.material_id);
+    if (error) return `Error al editar el material: ${error.message}`;
+    return `Material actualizado correctamente.`;
+  }
+
+  if (action === 'delete_material') {
+    const { error } = await supabase.from('stock_materiales').delete().eq('id', data.material_id);
+    if (error) return `Error al eliminar el material: ${error.message}`;
+    return `Material eliminado correctamente.`;
+  }
+
+  if (action === 'insert_lead') {
+    const { error } = await supabase.from('leads').insert([data]);
+    if (error) return `Error al crear el lead: ${error.message}`;
+    return `Lead "${data.nombre}" creado correctamente.`;
+  }
+
+  if (action === 'update_lead') {
+    const updates: Record<string, unknown> = {};
+    if (data.nombre) updates.nombre = data.nombre;
+    if (data.email) updates.email = data.email;
+    if (data.telefono) updates.telefono = data.telefono;
+    if (data.estado) updates.estado = data.estado;
+    if (data.notas) updates.notas = data.notas;
+    const { error } = await supabase.from('leads').update(updates).eq('id', data.lead_id);
+    if (error) return `Error al editar el lead: ${error.message}`;
+    return `Lead actualizado correctamente.`;
+  }
+
+  if (action === 'delete_lead') {
+    const { error } = await supabase.from('leads').delete().eq('id', data.lead_id);
+    if (error) return `Error al eliminar el lead: ${error.message}`;
+    return `Lead eliminado correctamente.`;
+  }
+
+  if (action === 'insert_comercializacion') {
+    const { error } = await supabase.from('comercializacion').insert([data]);
+    if (error) return `Error al crear la comercialización: ${error.message}`;
+    return `Comercialización creada correctamente.`;
+  }
+
+  if (action === 'update_comercializacion') {
+    const updates: Record<string, unknown> = {};
+    if (data.agente) updates.agente = data.agente;
+    if (data.precio_salida) updates.precio_salida = data.precio_salida;
+    if (data.precio_quiebre) updates.precio_quiebre = data.precio_quiebre;
+    if (data.precio_minimo) updates.precio_minimo = data.precio_minimo;
+    if (data.estado) updates.estado = data.estado;
+    if (data.en_portales !== undefined) updates.en_portales = data.en_portales;
+    const { error } = await supabase.from('comercializacion').update(updates).eq('id', data.comercializacion_id);
+    if (error) return `Error al editar la comercialización: ${error.message}`;
+    return `Comercialización actualizada correctamente.`;
+  }
+
+  if (action === 'insert_transaccion') {
+    const { error } = await supabase.from('transacciones').insert([data]);
+    if (error) return `Error al crear la transacción: ${error.message}`;
+    return `Transacción creada correctamente.`;
+  }
+
+  if (action === 'insert_simulacion') {
+    const { error } = await supabase.from('proyectos_rentabilidad').insert([data]);
+    if (error) return `Error al crear la simulación: ${error.message}`;
+    return `Simulación "${data.nombre}" creada correctamente.`;
+  }
   return 'Acción no reconocida.';
 }
 
