@@ -18,7 +18,7 @@ if (action === 'insert_evento') {
 
     if (tokenData?.refresh_token) {
       const expiryTime = new Date(tokenData.token_expiry).getTime();
-      if (expiryTime - Date.now() < 60 * 60 * 1000) {
+      if (expiryTime - Date.now() < 5 * 60 * 1000) {
         const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
