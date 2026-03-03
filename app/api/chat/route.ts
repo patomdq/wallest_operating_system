@@ -338,18 +338,18 @@ async function handleAction(action: string, data: Record<string, unknown>): Prom
       const accessToken = await getValidGoogleToken();
       if (accessToken) {
         await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            summary: data.titulo,
-            description: data.descripcion || '',
-            start: { dateTime: data.fecha_inicio, timeZone: 'Europe/Madrid' },
-            end: { dateTime: data.fecha_fin, timeZone: 'Europe/Madrid' },
-          }),
-        });
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    summary: data.titulo,
+    description: data.descripcion || '',
+    start: { dateTime: data.fecha_inicio, timeZone: 'Europe/Madrid' },
+    end: { dateTime: data.fecha_fin, timeZone: 'Europe/Madrid' },
+  }),
+});
       }
     } catch (e) {
       console.error('Error sincronizando con Google:', e);
@@ -368,11 +368,32 @@ if (action === 'update_evento') {
     return `Evento actualizado correctamente.`;
   }
 
-  if (action === 'delete_evento') {
+if (action === 'delete_evento') {
+    const { data: evento } = await supabase
+      .from('eventos_globales')
+      .select('google_event_id')
+      .eq('id', data.evento_id)
+      .single();
+
     const { error } = await supabase.from('eventos_globales').delete().eq('id', data.evento_id);
     if (error) return `Error al eliminar el evento: ${error.message}`;
+
+    if (evento?.google_event_id) {
+      try {
+        const accessToken = await getValidGoogleToken();
+        if (accessToken) {
+          await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${evento.google_event_id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+        }
+      } catch (e) {
+        console.error('Error eliminando de Google:', e);
+      }
+    }
+
     return `Evento eliminado correctamente.`;
-  }
+}
 
   if (action === 'insert_proveedor') {
     const { error } = await supabase.from('proveedores').insert([data]);
