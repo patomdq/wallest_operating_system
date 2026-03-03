@@ -89,10 +89,21 @@ export default function CalendarioTab() {
     }
   };
 
-  const loadGoogleSyncStatus = async () => {
-    const status = await getSyncStatus();
-    setGoogleSyncStatus(status);
-  };
+const loadGoogleSyncStatus = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  
+  const response = await fetch(`/api/google/status?userId=${user.id}`);
+  const data = await response.json();
+  setGoogleSyncStatus({ 
+    isConnected: data.isConnected,
+    lastSync: null,
+    totalEvents: 0,
+    syncedEvents: 0,
+    pendingEvents: 0,
+    errorEvents: 0
+  });
+};
 
  const handleConnectGoogle = async () => {
   const { data: { user } } = await supabase.auth.getUser();

@@ -364,7 +364,7 @@ const handleImprimir = () => {
 
     // Header
     doc.setDrawColor(...naranja);
-    doc.setLineWidth(1.5);
+    doc.setLineWidth(0.5);
     doc.line(14, y, 196, y);
     y += 8;
 
