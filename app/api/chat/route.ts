@@ -327,29 +327,38 @@ async function handleAction(action: string, data: Record<string, unknown>): Prom
     return `Tarea actualizada correctamente.`;
   }
 
-  if (action === 'insert_evento') {
-    const { error } = await supabase
+if (action === 'insert_evento') {
+    const { data: eventoInsertado, error } = await supabase
       .from('eventos_globales')
-      .insert([data]);
+      .insert([data])
+      .select()
+      .single();
 
     if (error) return `Error al crear el evento: ${error.message}`;
 
     try {
       const accessToken = await getValidGoogleToken();
       if (accessToken) {
-        await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-  method: 'POST',
-  headers: {
-    Authorization: `Bearer ${accessToken}`,
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    summary: data.titulo,
-    description: data.descripcion || '',
-    start: { dateTime: data.fecha_inicio, timeZone: 'Europe/Madrid' },
-    end: { dateTime: data.fecha_fin, timeZone: 'Europe/Madrid' },
-  }),
-});
+        const googleResponse = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            summary: data.titulo,
+            description: data.descripcion || '',
+            start: { dateTime: data.fecha_inicio, timeZone: 'Europe/Madrid' },
+            end: { dateTime: data.fecha_fin, timeZone: 'Europe/Madrid' },
+          }),
+        });
+
+        if (googleResponse.ok) {
+          const googleEvent = await googleResponse.json();
+          await supabase.from('eventos_globales')
+            .update({ google_event_id: googleEvent.id })
+            .eq('id', eventoInsertado.id);
+        }
       }
     } catch (e) {
       console.error('Error sincronizando con Google:', e);
