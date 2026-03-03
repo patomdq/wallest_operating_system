@@ -92,8 +92,7 @@ export default function CalendarioTab() {
 const loadGoogleSyncStatus = async () => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
-  console.log('USER:', user?.id);
-
+  
   const response = await fetch(`/api/google/status?userId=${user.id}`);
   const data = await response.json();
   setGoogleSyncStatus({ 
