@@ -41,22 +41,37 @@ export default function CalendarioTab() {
     reforma_id: '',
   });
 
-  useEffect(() => {
-    loadEventos();
-    loadReformas();
-    loadGoogleSyncStatus();
+useEffect(() => {
+  const init = async () => {
+    await loadEventos();
+    await loadReformas();
     
-    // Verificar si viene de una conexión exitosa
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const response = await fetch(`/api/google/status?userId=${user.id}`);
+      const data = await response.json();
+      setGoogleSyncStatus({
+        isConnected: data.isConnected,
+        lastSync: null,
+        totalEvents: 0,
+        syncedEvents: 0,
+        pendingEvents: 0,
+        errorEvents: 0
+      });
+    }
+
     const googleConnected = searchParams?.get('google_connected');
     const googleError = searchParams?.get('google_error');
     
     if (googleConnected === 'true') {
-      alert('✅ Google Calendar conectado correctamente. Sincronizando eventos...');
-      handleSyncFromGoogle();
+      alert('✅ Google Calendar conectado correctamente.');
     } else if (googleError) {
-      alert(`❌ Error al conectar con Google Calendar: ${googleError}`);
+      alert(`❌ Error: ${googleError}`);
     }
-  }, [searchParams]);
+  };
+  
+  init();
+}, [searchParams]);
 
   const loadEventos = async () => {
     try {
