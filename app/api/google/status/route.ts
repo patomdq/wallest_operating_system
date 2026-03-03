@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const now = Date.now();
     const fiveMinutes = 5 * 60 * 1000;
 
-    if (expiryTime - now < fiveMinutes && tokenData.refresh_token) {
+    if (expiryTime - now < 60 * 60 * 1000 && tokenData.refresh_token) {
       // Refrescar token
       const response = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
