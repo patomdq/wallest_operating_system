@@ -144,55 +144,93 @@ function needsContext(message: string): boolean {
   return keywords.some(k => lower.includes(k));
 }
 
-async function getContext() {
+async function getContext(message: string) {
   const fechaHoy = new Date().toISOString().split('T')[0];
+  const lower = message.toLowerCase();
 
-  const [
-    { data: inmuebles },
-    { data: movimientos_empresa },
-    { data: reformas },
-    { data: partidas },
-    { data: items },
-    { data: leads },
-    { data: proveedores },
-    { data: comercializacion },
-    { data: finanzas },
-    { data: saldo_actual },
-    { data: tareas },
-    { data: eventos },
-  ] = await Promise.all([
-    supabase.from('inmuebles').select('*'),
-    supabase.from('movimientos_empresa').select('*'),
-    supabase.from('reformas').select('*'),
-    supabase.from('partidas_reforma_detalladas').select('*'),
-    supabase.from('items_partida_reforma').select('*'),
-    supabase.from('leads').select('*'),
-    supabase.from('proveedores').select('*'),
-    supabase.from('comercializacion').select('*'),
-    supabase.from('finanzas').select('*'),
-    supabase.from('saldo_actual').select('*'),
-    supabase.from('tareas_globales').select('*'),
-    supabase.from('eventos_globales').select('*'),
-  ]);
+  const isFinanzas = /saldo|movimiento|gasto|ingreso|pago|dinero|banco|caja|finanza/.test(lower);
+  const isReforma = /reforma|partida|item|obra|presupuesto|electricidad|fontanería|carpintería|pintura|albañilería|cerrajería|iluminación|suelo|puerta|ventana|cocina|baño|mobiliario|cuadro|cableado|planificador/.test(lower);
+  const isInmueble = /inmueble|piso|propiedad|olula|zurgena|cuevas|activo/.test(lower);
+  const isCalendario = /evento|reunión|reunion|visita|cita|agenda|calendario|hoy|mañana|ayer|semana|cuando/.test(lower);
+  const isTareas = /tarea|kanban|pendiente|completada|prioridad/.test(lower);
+  const isLead = /lead|cliente|comprador|comercial|crm/.test(lower);
+  const isProveedor = /proveedor|contratista|hassan|material|stock/.test(lower);
+  const isComercial = /comercialización|comercializacion|venta|transaccion|transacción|portal/.test(lower);
 
-  return `
-=== DATOS HASU ===
-FECHA_HOY: ${fechaHoy}
-SALDO_ACTUAL: ${JSON.stringify(saldo_actual)}
-INMUEBLES: ${JSON.stringify(inmuebles)}
-MOVIMIENTOS: ${JSON.stringify(movimientos_empresa)}
-REFORMAS: ${JSON.stringify(reformas)}
-PARTIDAS: ${JSON.stringify(partidas)}
-ITEMS: ${JSON.stringify(items)}
-LEADS: ${JSON.stringify(leads)}
-PROVEEDORES: ${JSON.stringify(proveedores)}
-COMERCIALIZACION: ${JSON.stringify(comercializacion)}
-FINANZAS: ${JSON.stringify(finanzas)}
-TAREAS: ${JSON.stringify(tareas)}
-EVENTOS: ${JSON.stringify(eventos)}
-=== FIN ===`;
+  const queries: Promise<any>[] = [];
+  const labels: string[] = [];
+
+  queries.push(Promise.resolve({ data: [{ fecha_hoy: fechaHoy }] }));
+  labels.push('FECHA_HOY');
+
+  if (isFinanzas) {
+    queries.push(supabase.from('movimientos_empresa').select('*').order('fecha', { ascending: false }).limit(50));
+    labels.push('MOVIMIENTOS');
+    queries.push(supabase.from('saldo_actual').select('*'));
+    labels.push('SALDO_ACTUAL');
+  }
+
+  if (isInmueble || isReforma) {
+    queries.push(supabase.from('inmuebles').select('*'));
+    labels.push('INMUEBLES');
+  }
+
+  if (isReforma) {
+    queries.push(supabase.from('reformas').select('*'));
+    labels.push('REFORMAS');
+    queries.push(supabase.from('partidas_reforma_detalladas').select('*'));
+    labels.push('PARTIDAS');
+    queries.push(supabase.from('items_partida_reforma').select('*'));
+    labels.push('ITEMS');
+  }
+
+  if (isCalendario) {
+    queries.push(supabase.from('eventos_globales').select('*').order('fecha_inicio', { ascending: true }).limit(50));
+    labels.push('EVENTOS');
+  }
+
+  if (isTareas) {
+    queries.push(supabase.from('tareas_globales').select('*'));
+    labels.push('TAREAS');
+  }
+
+  if (isLead) {
+    queries.push(supabase.from('leads').select('*'));
+    labels.push('LEADS');
+  }
+
+  if (isProveedor) {
+    queries.push(supabase.from('proveedores').select('*'));
+    labels.push('PROVEEDORES');
+    queries.push(supabase.from('stock_materiales').select('*'));
+    labels.push('MATERIALES');
+  }
+
+  if (isComercial) {
+    queries.push(supabase.from('comercializacion').select('*'));
+    labels.push('COMERCIALIZACION');
+    queries.push(supabase.from('transacciones').select('*'));
+    labels.push('TRANSACCIONES');
+  }
+
+  // Si no hay nada específico, carga mínimo
+  if (!isFinanzas && !isReforma && !isInmueble && !isCalendario && !isTareas && !isLead && !isProveedor && !isComercial) {
+    queries.push(supabase.from('saldo_actual').select('*'));
+    labels.push('SALDO_ACTUAL');
+    queries.push(supabase.from('inmuebles').select('id, nombre, estado'));
+    labels.push('INMUEBLES');
+  }
+
+  const results = await Promise.all(queries);
+
+  let context = `=== DATOS HASU ===\nFECHA_HOY: ${fechaHoy}\n`;
+  results.slice(1).forEach((result, i) => {
+    context += `${labels[i + 1]}: ${JSON.stringify(result.data)}\n`;
+  });
+  context += '=== FIN ===';
+
+  return context;
 }
-
 async function getValidGoogleToken(): Promise<string | null> {
   try {
     const { data: tokenData } = await supabase
@@ -514,7 +552,7 @@ export async function POST(request: NextRequest) {
     const { message, conversationHistory = [] } = await request.json();
 
     const requiresContext = needsContext(message);
-    const contextBlock = requiresContext ? await getContext() : '';
+    const contextBlock = requiresContext ? await getContext(message) : '';
 
     const userContent = requiresContext
       ? `${contextBlock}\n\nMensaje: ${message}`
