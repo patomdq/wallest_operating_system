@@ -139,6 +139,7 @@ function needsContext(message: string): boolean {
     'registra', 'anota', 'añade', 'carga', 'apunta', 'actualiza', 'cambia', 'marca',
     'evento', 'reunión', 'visita', 'cita', 'agenda', 'calendario',
     'hoy', 'mañana', 'ayer', 'semana', 'fecha', 'cuando', 'hoy?', 'reunion',
+    'finanza', 'movimiento', 'ingreso', 'egreso', 'inversión', 'inversion', 'total', 'cuanto', 'cuánto', 'balance', 'resumen', 'situación',     'situacion',
   ];
   const lower = message.toLowerCase();
   return keywords.some(k => lower.includes(k));
@@ -148,7 +149,7 @@ async function getContext(message: string) {
   const fechaHoy = new Date().toISOString().split('T')[0];
   const lower = message.toLowerCase();
 
-  const isFinanzas = /saldo|movimiento|gasto|ingreso|pago|dinero|banco|caja|finanza/.test(lower);
+  const isFinanzas = /saldo|movimiento|gasto|ingreso|pago|dinero|banco|caja|finanza|inversión|inversion|total|cuanto|balance|resumen|situación|situacion/.test(lower);
   const isReforma = /reforma|partida|item|obra|presupuesto|electricidad|fontanería|carpintería|pintura|albañilería|cerrajería|iluminación|suelo|puerta|ventana|cocina|baño|mobiliario|cuadro|cableado|planificador/.test(lower);
   const isInmueble = /inmueble|piso|propiedad|olula|zurgena|cuevas|activo/.test(lower);
   const isCalendario = /evento|reunión|reunion|visita|cita|agenda|calendario|hoy|mañana|ayer|semana|cuando/.test(lower);
