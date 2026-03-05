@@ -7,55 +7,55 @@ import { supabase } from '@/lib/supabase';
 import { useState, useEffect } from 'react';
 import CambiarEntornoButton from './CambiarEntornoButton';
 
-const getPageTitle = (pathname: string): string => {
-  if (pathname === '/') return 'Dashboard General WOS';
-  
-  const pathSegments = pathname.split('/').filter(Boolean);
-  
-  const titleMap: { [key: string]: string } = {
-    'wallest': 'Wallest',
-    'activos': 'Activos Inmobiliarios',
-    'administracion': 'Administración',
-    'organizador': 'Organizador',
-    'finanzas': 'Finanzas',
-    'rrhh': 'Recursos Humanos',
-    'calculadora': 'Calculadora de Rentabilidad',
-    'macroproyectos': 'Gestor de Macroproyectos',
-    'documentos': 'Documentos',
-    'renova': 'Renova',
-    'reformas': 'Reformas',
-    'planificador': 'Planificador',
-    'proveedores': 'Proveedores',
-    'materiales': 'Stock / Materiales',
-    'finanzas-proyecto': 'Finanzas de Proyecto',
-    'nexo': 'Nexo',
-    'leads': 'CRM de Leads',
-    'comercializacion': 'Comercialización',
-    'transacciones': 'Transacciones',
-    'contratos': 'Contratos'
-  };
-
-  // Construir título basado en los segmentos
-  const titles = pathSegments.map(segment => titleMap[segment] || segment)
-    .filter(Boolean);
-  
-  return titles.length > 0 ? titles.join(' • ') : 'Wallest Operating System';
+const titleMap: Record<string, string> = {
+  'wallest':          'Wallest',
+  'activos':          'Activos Inmobiliarios',
+  'administracion':   'Administración',
+  'organizador':      'Organizador',
+  'finanzas':         'Finanzas',
+  'rrhh':             'Recursos Humanos',
+  'calculadora':      'Calculadora de Rentabilidad',
+  'macroproyectos':   'Gestor de Macroproyectos',
+  'documentos':       'Documentos',
+  'renova':           'Renova',
+  'reformas':         'Reformas',
+  'planificador':     'Planificador',
+  'proveedores':      'Proveedores',
+  'materiales':       'Stock / Materiales',
+  'nexo':             'Nexo',
+  'leads':            'CRM de Leads',
+  'comercializacion': 'Comercialización',
+  'transacciones':    'Transacciones',
+  'contratos':        'Contratos',
 };
+
+const areaConfig: Record<string, { color: string; label: string }> = {
+  wallest: { color: '#3b82f6', label: 'WALLEST' },
+  renova:  { color: '#F15A29', label: 'RENOVA' },
+  nexo:    { color: '#22c55e', label: 'NEXO' },
+};
+
+function getPageInfo(pathname: string) {
+  if (pathname === '/') return { title: 'Dashboard General', subtitle: '', area: null };
+  const segments = pathname.split('/').filter(Boolean);
+  const area = segments[0];
+  const section = segments[1];
+  const title = section ? (titleMap[section] || section) : (titleMap[area] || area);
+  const subtitle = titleMap[area] ? `${titleMap[area]} · Wallest by Hasu` : 'WOS 2.0';
+  return { title, subtitle, area: areaConfig[area] || null };
+}
 
 export default function HeaderBar() {
   const { toggleSidebar, isOpen } = useSidebar();
   const pathname = usePathname();
   const router = useRouter();
-  const pageTitle = getPageTitle(pathname);
+  const { title, subtitle, area } = getPageInfo(pathname);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+    supabase.auth.getUser().then(({ data: { user } }) => {
       setUserEmail(user?.email || null);
-    };
-    
-    getUser();
+    });
   }, []);
 
   const handleSignOut = async () => {
@@ -66,42 +66,73 @@ export default function HeaderBar() {
   };
 
   return (
-    <header className="bg-wos-card border-b border-wos-border px-3 md:px-4 py-3 flex items-center min-h-[60px]">
+    <header
+      className="border-b border-wos-border px-4 flex items-center min-h-[56px] gap-3"
+      style={{ background: '#111111' }}
+    >
+      {/* Hamburger */}
       <button
         onClick={toggleSidebar}
-        className="hamburger-menu p-2 rounded-lg hover:bg-wos-bg transition-all duration-200 flex-shrink-0"
-        aria-label={isOpen ? "Ocultar menú lateral" : "Mostrar menú lateral"}
-        title={isOpen ? "Ocultar menú lateral" : "Mostrar menú lateral"}
+        className="hamburger-menu p-1.5 rounded-lg transition-all flex-shrink-0"
+        style={{ background: 'transparent' }}
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#1e1e1e'}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+        aria-label="Toggle menú"
       >
-        <Menu size={20} className="text-wos-text-muted hover:text-wos-accent transition-colors duration-200" />
+        <Menu size={18} color="#ffffff" />
       </button>
-      
-      <div className="ml-2 md:ml-4 flex-1 min-w-0">
-        <h1 className="text-sm md:text-lg font-semibold text-wos-accent truncate">
-          {pageTitle}
-        </h1>
-        {pageTitle !== 'Dashboard General WOS' && (
-          <p className="text-xs text-wos-text-muted hidden sm:block">Wallest Operating System</p>
+
+      {/* Badge área + título */}
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        {area && (
+          <span
+            className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest flex-shrink-0"
+            style={{ background: area.color + '20', color: area.color }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: area.color }} />
+            {area.label}
+          </span>
         )}
+        <div className="min-w-0">
+          <h1 className="text-[14px] font-semibold text-white truncate leading-tight">
+            {title}
+          </h1>
+          {subtitle && pathname !== '/' && (
+            <p className="text-[11px] hidden md:block leading-tight" style={{ color: '#888' }}>
+              {subtitle}
+            </p>
+          )}
+        </div>
       </div>
 
-      {/* Botón cambiar entorno, usuario y cerrar sesión */}
-      <div className="flex items-center space-x-1 md:space-x-3 flex-shrink-0">
+      {/* Derecha */}
+      <div className="flex items-center gap-2 flex-shrink-0">
         <CambiarEntornoButton />
-        
+
         {userEmail && (
-          <div className="hidden lg:block text-right max-w-[200px]">
-            <p className="text-sm text-wos-text truncate">{userEmail}</p>
-            <p className="text-xs text-wos-text-muted">Usuario</p>
+          <div className="hidden lg:flex items-center gap-2.5 pl-3 border-l border-wos-border">
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+              style={{ background: '#F15A29', color: '#ffffff' }}
+            >
+              {userEmail.charAt(0).toUpperCase()}
+            </div>
+            <div className="text-right">
+              <p className="text-[12px] text-white leading-tight truncate max-w-[160px]">{userEmail}</p>
+              <p className="text-[10px] leading-tight" style={{ color: '#888' }}>Usuario</p>
+            </div>
           </div>
         )}
-        
+
         <button
           onClick={handleSignOut}
-          className="p-2 rounded-lg hover:bg-wos-bg transition-all duration-200 group"
+          className="p-1.5 rounded-lg transition-all group ml-1"
+          style={{ background: 'transparent' }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#1e1e1e'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
           title="Cerrar sesión"
         >
-          <LogOut size={18} className="text-wos-text-muted group-hover:text-red-500 transition-colors md:w-5 md:h-5" />
+          <LogOut size={16} color="#888" />
         </button>
       </div>
     </header>

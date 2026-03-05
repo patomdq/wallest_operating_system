@@ -99,7 +99,7 @@ export default function AdministracionPage() {
 
   useEffect(() => {
     calcularKPIs();
-  }, [movimientos]);
+  }, [movimientos, filtroCuenta]);
 
   const loadData = async () => {
     try {
@@ -154,59 +154,56 @@ export default function AdministracionPage() {
     }
   };
 
+  const CUENTA_PRINCIPAL = 'CaixaBank';
+
   const calcularKPIs = () => {
-    console.log('🔢 Calculando KPIs con', movimientos.length, 'movimientos');
-    
-    // Saldo actual (todos los ingresos - todos los gastos)
-    const ingresos = movimientos
+    // Filtrar por cuenta si hay filtro activo
+    // Sin filtro: saldo actual = solo cuenta principal (CaixaBank)
+    const movsFiltrados = filtroCuenta
+      ? movimientos.filter(m => m.cuenta === filtroCuenta)
+      : movimientos;
+
+    // Para saldo actual: si no hay filtro usamos solo la cuenta principal
+    const movsParaSaldo = filtroCuenta
+      ? movimientos.filter(m => m.cuenta === filtroCuenta)
+      : movimientos.filter(m => m.cuenta === CUENTA_PRINCIPAL);
+
+    // Saldo actual
+    const ingresos = movsParaSaldo
       .filter(m => m.tipo === 'Ingreso')
       .reduce((sum, m) => sum + m.monto, 0);
     
-    const gastos = movimientos
+    const gastos = movsParaSaldo
       .filter(m => m.tipo === 'Gasto')
       .reduce((sum, m) => sum + m.monto, 0);
     
     setSaldoActual(ingresos - gastos);
-    console.log('💰 Saldo total:', ingresos - gastos, '(Ingresos:', ingresos, '- Gastos:', gastos, ')');
 
     // Gastos e ingresos del mes actual
     const now = new Date();
     const mesActual = now.getMonth();
     const añoActual = now.getFullYear();
 
-    console.log('📅 Mes actual:', mesActual + 1, '/', añoActual);
-
-    const gastosMesActual = movimientos
+    const gastosMesActual = movsFiltrados
       .filter(m => {
         const fecha = new Date(m.fecha);
-        const esMesActual = fecha.getMonth() === mesActual && fecha.getFullYear() === añoActual;
-        if (m.tipo === 'Gasto' && esMesActual) {
-          console.log('  📉 Gasto del mes:', m.concepto, '-', m.monto, '€', '(Fecha:', m.fecha, ')');
-        }
-        return m.tipo === 'Gasto' && esMesActual;
+        return m.tipo === 'Gasto' && fecha.getMonth() === mesActual && fecha.getFullYear() === añoActual;
       })
       .reduce((sum, m) => sum + m.monto, 0);
 
-    const ingresosMesActual = movimientos
+    const ingresosMesActual = movsFiltrados
       .filter(m => {
         const fecha = new Date(m.fecha);
-        const esMesActual = fecha.getMonth() === mesActual && fecha.getFullYear() === añoActual;
-        if (m.tipo === 'Ingreso' && esMesActual) {
-          console.log('  📈 Ingreso del mes:', m.concepto, '-', m.monto, '€', '(Fecha:', m.fecha, ')');
-        }
-        return m.tipo === 'Ingreso' && esMesActual;
+        return m.tipo === 'Ingreso' && fecha.getMonth() === mesActual && fecha.getFullYear() === añoActual;
       })
       .reduce((sum, m) => sum + m.monto, 0);
-
-    console.log('📊 Gastos del mes:', gastosMesActual, '€');
-    console.log('📊 Ingresos del mes:', ingresosMesActual, '€');
     console.log('📊 Balance del mes:', ingresosMesActual - gastosMesActual, '€');
 
     setGastosMes(gastosMesActual);
     setIngresosMes(ingresosMesActual);
     setBalanceMes(ingresosMesActual - gastosMesActual);
 
-    // Calcular saldos por cuenta
+    // Calcular saldos por cuenta (siempre del total, no filtrado)
     const saldosCuenta: Record<string, number> = {};
     movimientos.forEach(m => {
       if (!saldosCuenta[m.cuenta]) {
@@ -400,10 +397,6 @@ export default function AdministracionPage() {
     });
     setEditingId(movimiento.id);
     setShowForm(true);
-    
-    console.log('📝 Formulario actualizado con datos del movimiento');
-    console.log('📍 Scrolling hacia arriba...');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: string) => {
@@ -538,12 +531,28 @@ export default function AdministracionPage() {
         </div>
       </div>
 
-      {/* Formulario */}
+      {/* Modal formulario */}
       {showForm && (
-        <div className="bg-wos-card border border-wos-border rounded-lg p-6 mb-8">
-          <h3 className="text-xl font-semibold text-wos-text mb-4">
-            {editingId ? 'Editar Movimiento' : 'Nuevo Movimiento'}
-          </h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.75)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) resetForm(); }}
+        >
+          <div
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6"
+            style={{ background: '#161616', border: '1px solid #252525' }}
+          >
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-lg font-semibold text-white">
+              {editingId ? 'Editar Movimiento' : 'Nuevo Movimiento'}
+            </h3>
+            <button
+              type="button"
+              onClick={resetForm}
+              className="text-sm px-3 py-1 rounded-lg"
+              style={{ color: '#888', background: '#222' }}
+            >✕</button>
+          </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-wos-text-muted mb-2">Fecha *</label>
@@ -689,6 +698,7 @@ export default function AdministracionPage() {
               </button>
             </div>
           </form>
+          </div>
         </div>
       )}
 

@@ -34,6 +34,8 @@ export default function FinanzasConsolidadas() {
   const [roiPromedioGlobal, setRoiPromedioGlobal] = useState(0);
   const [sortColumn, setSortColumn] = useState<string>('nombre');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [filtroTipo, setFiltroTipo] = useState<'TODOS' | 'HASU' | 'JV'>('TODOS');
+  const [tiposOperacion, setTiposOperacion] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadProyectosConsolidados();
@@ -57,7 +59,9 @@ export default function FinanzasConsolidadas() {
             nombre,
             estado,
             precio_compra,
-            fecha_compra
+            fecha_compra,
+            tipo_operacion,
+            porcentaje_hasu
           )
         `);
 
@@ -111,6 +115,8 @@ export default function FinanzasConsolidadas() {
         proyectosConsolidados.push({
           id: reforma.id,
           nombre: reforma.nombre,
+          tipo_operacion: reforma.inmuebles?.tipo_operacion || 'HASU',
+          porcentaje_hasu: reforma.inmuebles?.porcentaje_hasu || 100,
           estado: reforma.inmuebles?.estado || reforma.estado || 'EN_ESTUDIO',
           precio_compra: precioCompra,
           fecha_compra: reforma.inmuebles?.fecha_compra || null,
@@ -170,7 +176,23 @@ export default function FinanzasConsolidadas() {
     }
   };
 
-  const sortedProyectos = [...proyectos].sort((a, b) => {
+  const proyectosFiltrados = proyectos.filter(p => {
+    if (filtroTipo === 'HASU') return (p as any).tipo_operacion === 'HASU';
+    if (filtroTipo === 'JV') return (p as any).tipo_operacion === 'JV';
+    return true;
+  });
+
+  // Recalcular KPIs según filtro
+  const kpiInversion = proyectosFiltrados.reduce((s, p) => s + p.precio_compra, 0);
+  const kpiGastos = proyectosFiltrados.reduce((s, p) => s + p.gastos_reales, 0);
+  const kpiIngresos = proyectosFiltrados.reduce((s, p) => s + p.ingresos, 0);
+  const kpiBeneficio = kpiIngresos - (kpiInversion + kpiGastos);
+  const kpiProyectosVenta = proyectosFiltrados.filter(p => p.tiene_venta);
+  const kpiRoi = kpiProyectosVenta.length > 0
+    ? kpiProyectosVenta.reduce((s, p) => s + p.roi, 0) / kpiProyectosVenta.length
+    : 0;
+
+  const sortedProyectos = [...proyectosFiltrados].sort((a, b) => {
     let aValue: any = a[sortColumn as keyof ProyectoConsolidado];
     let bValue: any = b[sortColumn as keyof ProyectoConsolidado];
 
@@ -219,6 +241,7 @@ export default function FinanzasConsolidadas() {
     return 'text-red-500';
   };
 
+
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -234,7 +257,7 @@ export default function FinanzasConsolidadas() {
             <TrendingUp className="text-wos-accent" size={16} />
           </div>
           <p className="text-2xl font-bold text-wos-text">
-            {inversionTotal.toLocaleString('es-ES', { minimumFractionDigits: 0 })} €
+            {kpiInversion.toLocaleString('es-ES', { minimumFractionDigits: 0 })} €
           </p>
         </div>
 
@@ -244,7 +267,7 @@ export default function FinanzasConsolidadas() {
             <TrendingUp className="text-red-500" size={16} />
           </div>
           <p className="text-2xl font-bold text-red-500">
-            {gastosTotal.toLocaleString('es-ES', { minimumFractionDigits: 0 })} €
+            {kpiGastos.toLocaleString('es-ES', { minimumFractionDigits: 0 })} €
           </p>
         </div>
 
@@ -254,29 +277,47 @@ export default function FinanzasConsolidadas() {
             <TrendingUp className="text-green-500" size={16} />
           </div>
           <p className="text-2xl font-bold text-green-500">
-            {ingresosTotal.toLocaleString('es-ES', { minimumFractionDigits: 0 })} €
+            {kpiIngresos.toLocaleString('es-ES', { minimumFractionDigits: 0 })} €
           </p>
         </div>
 
         <div className="bg-wos-card border border-wos-border rounded-lg p-4">
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs text-wos-text-muted">Beneficio Total</p>
-            <TrendingUp className={beneficioTotal >= 0 ? 'text-green-500' : 'text-red-500'} size={16} />
+            <TrendingUp className={kpiBeneficio >= 0 ? 'text-green-500' : 'text-red-500'} size={16} />
           </div>
-          <p className={`text-2xl font-bold ${beneficioTotal >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {beneficioTotal.toLocaleString('es-ES', { minimumFractionDigits: 0 })} €
+          <p className={`text-2xl font-bold ${kpiBeneficio >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            {kpiBeneficio.toLocaleString('es-ES', { minimumFractionDigits: 0 })} €
           </p>
         </div>
 
         <div className="bg-wos-card border border-wos-border rounded-lg p-4">
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs text-wos-text-muted">ROI Promedio</p>
-            <TrendingUp className={roiPromedioGlobal >= 0 ? 'text-green-500' : 'text-red-500'} size={16} />
+            <TrendingUp className={kpiRoi >= 0 ? 'text-green-500' : 'text-red-500'} size={16} />
           </div>
-          <p className={`text-2xl font-bold ${roiPromedioGlobal >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {roiPromedioGlobal.toFixed(2)}%
+          <p className={`text-2xl font-bold ${kpiRoi >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            {kpiRoi.toFixed(2)}%
           </p>
         </div>
+      </div>
+
+      {/* Filtro HASU / JV */}
+      <div className="flex gap-2 mb-6">
+        {(['TODOS', 'HASU', 'JV'] as const).map(tipo => (
+          <button
+            key={tipo}
+            onClick={() => setFiltroTipo(tipo)}
+            className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+            style={{
+              background: filtroTipo === tipo ? '#F15A29' : '#161616',
+              color: filtroTipo === tipo ? '#ffffff' : '#888',
+              border: `1px solid ${filtroTipo === tipo ? '#F15A29' : '#252525'}`,
+            }}
+          >
+            {tipo === 'TODOS' ? 'Todos' : tipo === 'HASU' ? 'HASU (100%)' : 'JV con Socios'}
+          </button>
+        ))}
       </div>
 
       {/* Tabla Consolidada */}

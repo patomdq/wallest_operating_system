@@ -3,50 +3,57 @@
 import { useRouter } from 'next/navigation';
 import { Building2, Wrench, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+
+const entornos = [
+  {
+    id: 'wallest',
+    nombre: 'WALLEST',
+    descripcion: 'Gestión financiera y activos',
+    icon: Building2,
+    bgColor: '#1e40af',
+    bgHover: '#1d4ed8',
+    path: '/wallest',
+    tag: 'Finanzas · Activos · Admin',
+  },
+  {
+    id: 'renova',
+    nombre: 'RENOVA',
+    descripcion: 'Reformas y proyectos',
+    icon: Wrench,
+    bgColor: '#ea580c',
+    bgHover: '#c2410c',
+    path: '/renova',
+    tag: 'Obras · Planificador · Stock',
+  },
+  {
+    id: 'nexo',
+    nombre: 'NEXO',
+    descripcion: 'Comercialización y ventas',
+    icon: Users,
+    bgColor: '#16a34a',
+    bgHover: '#15803d',
+    path: '/nexo',
+    tag: 'Leads · CRM · Transacciones',
+  },
+];
 
 export default function HubPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserEmail(user?.email || null);
+    });
   }, []);
-
-  const entornos = [
-    {
-      id: 'wallest',
-      nombre: 'WALLEST',
-      descripcion: 'Gestión financiera y activos',
-      icon: Building2,
-      color: 'from-blue-500 to-blue-700',
-      hoverColor: 'hover:from-blue-600 hover:to-blue-800',
-      path: '/wallest',
-    },
-    {
-      id: 'renova',
-      nombre: 'RENOVA',
-      descripcion: 'Reformas y proyectos',
-      icon: Wrench,
-      color: 'from-orange-500 to-orange-700',
-      hoverColor: 'hover:from-orange-600 hover:to-orange-800',
-      path: '/renova',
-    },
-    {
-      id: 'nexo',
-      nombre: 'NEXO',
-      descripcion: 'Comercialización y ventas',
-      icon: Users,
-      color: 'from-green-500 to-green-700',
-      hoverColor: 'hover:from-green-600 hover:to-green-800',
-      path: '/nexo',
-    },
-  ];
 
   const handleEntornoClick = (entornoId: string, path: string) => {
     if (!mounted) return;
-    
     try {
-      // Guardar entorno seleccionado en localStorage
       localStorage.setItem('wos_env', entornoId.toUpperCase());
       router.push(path);
     } catch (error) {
@@ -54,91 +61,109 @@ export default function HubPage() {
     }
   };
 
+  const firstName = userEmail?.split('@')[0].split('.')[0];
+  const displayName = firstName
+    ? firstName.charAt(0).toUpperCase() + firstName.slice(1)
+    : null;
+
   return (
-    <div className="min-h-screen bg-wos-bg flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-6xl">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-wos-text mb-4">
-            Wallest Operating System
-          </h1>
-          <p className="text-lg md:text-xl text-wos-text-muted">
-            Selecciona un entorno para continuar
-          </p>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12" style={{ background: '#0a0a0a' }}>
+
+      {/* Header */}
+      <div className="text-center mb-12">
+        <div className="flex items-center justify-center mb-6">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
+            style={{ background: 'linear-gradient(135deg, #F15A29, #c44a20)' }}
+          >
+            <span className="text-white font-black text-lg">W</span>
+          </div>
         </div>
 
-        {/* Grid de entornos */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          {entornos.map((entorno) => {
-            const Icon = entorno.icon;
-            return (
-              <button
-                key={entorno.id}
-                onClick={() => handleEntornoClick(entorno.id, entorno.path)}
-                className={`
-                  group relative overflow-hidden
-                  bg-gradient-to-br ${entorno.color} ${entorno.hoverColor}
-                  rounded-2xl p-8 md:p-10
-                  transition-all duration-300
-                  transform hover:scale-105 hover:shadow-2xl
-                  focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-wos-bg focus:ring-blue-500
-                `}
-              >
-                {/* Background pattern */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white to-transparent"></div>
+        <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+          {displayName
+            ? <>Bienvenido, <span style={{ color: '#F15A29' }}>{displayName}</span></>
+            : 'Bienvenido'
+          }
+        </h1>
+
+        <p className="text-base" style={{ color: '#888' }}>
+          Selecciona el área de trabajo para continuar
+        </p>
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+        {entornos.map((entorno) => {
+          const Icon = entorno.icon;
+          const isHovered = hoveredId === entorno.id;
+
+          return (
+            <button
+              key={entorno.id}
+              onClick={() => handleEntornoClick(entorno.id, entorno.path)}
+              onMouseEnter={() => setHoveredId(entorno.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              className="relative overflow-hidden rounded-2xl text-left focus:outline-none"
+              style={{
+                background: isHovered ? entorno.bgHover : entorno.bgColor,
+                transform: isHovered ? 'translateY(-4px) scale(1.01)' : 'translateY(0) scale(1)',
+                boxShadow: isHovered
+                  ? `0 20px 50px ${entorno.bgColor}60`
+                  : `0 4px 20px ${entorno.bgColor}40`,
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {/* Shine */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%)' }}
+              />
+
+              <div className="relative z-10 p-8">
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
+                  style={{ background: 'rgba(255,255,255,0.2)' }}
+                >
+                  <Icon size={28} color="#ffffff" strokeWidth={1.8} />
                 </div>
 
-                {/* Content */}
-                <div className="relative z-10 flex flex-col items-center text-center space-y-4">
-                  {/* Icon */}
-                  <div className="p-4 bg-white/20 rounded-full backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300">
-                    <Icon size={48} className="text-white" strokeWidth={2} />
-                  </div>
+                <h2 className="text-3xl font-bold text-white mb-2 tracking-wide">
+                  {entorno.nombre}
+                </h2>
 
-                  {/* Nombre */}
-                  <h2 className="text-3xl md:text-4xl font-bold text-white tracking-wide">
-                    {entorno.nombre}
-                  </h2>
+                <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  {entorno.descripcion}
+                </p>
 
-                  {/* Descripción */}
-                  <p className="text-base md:text-lg text-white/90">
-                    {entorno.descripcion}
-                  </p>
+                <p className="text-xs font-medium uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  {entorno.tag}
+                </p>
 
-                  {/* Arrow indicator */}
-                  <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="flex items-center gap-2 text-white font-medium">
-                      <span>Entrar</span>
-                      <svg
-                        className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 7l5 5m0 0l-5 5m5-5H6"
-                        />
-                      </svg>
-                    </div>
-                  </div>
+                <div
+                  className="flex items-center gap-2 text-white font-semibold text-sm"
+                  style={{
+                    opacity: isHovered ? 1 : 0,
+                    transform: isHovered ? 'translateX(0)' : 'translateX(-6px)',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <span>Entrar</span>
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
                 </div>
-              </button>
-            );
-          })}
-        </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Footer */}
-        <div className="text-center mt-12">
-          <p className="text-sm text-wos-text-muted">
-            WOS 1.0 - Desarrollado por{' '}
-            <span className="font-medium text-blue-500">Berciamedia</span> para{' '}
-            <span className="font-medium text-blue-500">Hasu SL</span>
-          </p>
-        </div>
+      {/* Footer */}
+      <div className="mt-12 text-center">
+        <p className="text-xs" style={{ color: '#333' }}>
+          WOS 2.0 · <span style={{ color: '#555' }}>Wallest by Hasu Activos Inmobiliarios SL</span>
+        </p>
       </div>
     </div>
   );

@@ -12,9 +12,10 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
   const isHubPage = pathname === '/hub';
+  const isInversorPage = pathname === '/inversores' || pathname.startsWith('/inversores/');
 
-  // Si es la página de login, mostrar solo el contenido sin layout ni protección
-  if (isLoginPage) {
+  // Si es la página de login o inversores, mostrar solo el contenido sin layout ni protección
+  if (isLoginPage || isInversorPage) {
     return <>{children}</>;
   }
 
