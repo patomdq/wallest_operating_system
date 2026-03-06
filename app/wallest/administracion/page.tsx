@@ -56,6 +56,7 @@ const CUENTAS = [
   'Banco Sabadell',
   'BBVA',
   'CaixaBank',
+  'CaixaBank JV Zurgena 1',
   'Santander',
   'Caja',
   'Otra'
@@ -169,15 +170,9 @@ export default function AdministracionPage() {
       : movimientos.filter(m => m.cuenta === CUENTA_PRINCIPAL);
 
     // Saldo actual
-    const ingresos = movsParaSaldo
-      .filter(m => m.tipo === 'Ingreso')
-      .reduce((sum, m) => sum + m.monto, 0);
-    
-    const gastos = movsParaSaldo
-      .filter(m => m.tipo === 'Gasto')
-      .reduce((sum, m) => sum + m.monto, 0);
-    
-    setSaldoActual(ingresos - gastos);
+    // montos negativos para gastos ya vienen desde la BD
+    const saldoCalculado = movsParaSaldo.reduce((sum, m) => sum + m.monto, 0);
+    setSaldoActual(saldoCalculado);
 
     // Gastos e ingresos del mes actual
     const now = new Date();
@@ -209,7 +204,8 @@ export default function AdministracionPage() {
       if (!saldosCuenta[m.cuenta]) {
         saldosCuenta[m.cuenta] = 0;
       }
-      saldosCuenta[m.cuenta] += m.tipo === 'Ingreso' ? m.monto : -m.monto;
+      // montos de gastos ya vienen negativos desde la BD
+      saldosCuenta[m.cuenta] += m.monto;
     });
     setSaldosPorCuenta(saldosCuenta);
   };
