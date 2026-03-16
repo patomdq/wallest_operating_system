@@ -399,17 +399,29 @@ export default function AdministracionPage() {
     if (confirm('¿Estás seguro de eliminar este movimiento? Esta acción no se puede deshacer.')) {
       try {
         // Obtener el movimiento para ver si está vinculado a un proyecto
-        const { data: movimiento } = await supabase
+        const { data: movimiento, error: errorSelect } = await supabase
           .from('movimientos_empresa')
           .select('proyecto_id, concepto')
           .eq('id', id)
           .single();
 
+        if (errorSelect) {
+          console.error('Error obteniendo movimiento:', errorSelect);
+          alert('Error al obtener el movimiento: ' + errorSelect.message);
+          return;
+        }
+
         // Eliminar de movimientos_empresa
-        await supabase
+        const { error: errorDelete } = await supabase
           .from('movimientos_empresa')
           .delete()
           .eq('id', id);
+
+        if (errorDelete) {
+          console.error('Error eliminando movimiento:', errorDelete);
+          alert('Error al eliminar el movimiento: ' + errorDelete.message);
+          return;
+        }
 
         // Si estaba vinculado a un proyecto, también eliminar de finanzas_proyecto
         if (movimiento?.proyecto_id) {
