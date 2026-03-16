@@ -338,7 +338,7 @@ export default function InversorPortal() {
 
       const { data: operacionesData } = await supabase
         .from('inversor_operaciones')
-        .select(`id, capital_invertido, capital_total_operacion, participacion,
+        .select(`id, inmueble_id, capital_invertido, capital_total_operacion, participacion,
           valor_estimado_venta, retorno_estimado, retorno_propio, roi,
           duracion_meses, fecha_entrada, fecha_salida_estimada, avance,
           inmuebles ( nombre, estado )`)
@@ -346,64 +346,43 @@ export default function InversorPortal() {
 
       const operacionesConDatos: Operacion[] = [];
       for (const op of operacionesData || []) {
+        // Buscar el proyecto en reformas usando el nombre del inmueble
+        const inmuebleNombre = (op.inmuebles as any)?.nombre || '';
+        const { data: reformaData } = await supabase
+          .from('reformas')
+          .select('id')
+          .eq('nombre', inmuebleNombre)
+          .single();
+
+        const reformaId = reformaData?.id || null;
+
         const [{ data: hitos }, { data: bitacora }, { data: movRaw }] = await Promise.all([
           supabase.from('inversor_hitos').select('label, done, fecha, orden').eq('operacion_id', op.id).order('orden'),
           supabase.from('inversor_bitacora').select('partida, estado, fecha, orden').eq('operacion_id', op.id).order('orden'),
-          supabase.from('movimientos_empresa').select('fecha, concepto, monto, tipo').eq('proyecto_id', op.id).order('fecha', { ascending: false }),
+          reformaId
+            ? supabase.from('movimientos_empresa').select('fecha, concepto, monto, tipo').eq('proyecto_id', reformaId).order('fecha', { ascending: false })
+            : Promise.resolve({ data: [] }),
         ]);
 
-        // Movimientos bancarios reales del PDF — hardcoded por ahora hasta vincular cuenta JV
-        const movimientosPDF: Movimiento[] = [
-          { fecha: '06 Mar 2026', concepto: 'LEROY MERLIN ES', importe: 97.31, saldo: 3839.54, tipo: 'Ingreso' },
-          { fecha: '05 Mar 2026', concepto: 'FERRETERIA LEPANT', importe: -134.25, saldo: 3742.23, tipo: 'Gasto' },
-          { fecha: '05 Mar 2026', concepto: 'Entrada n.00553 / Maria Asuncion', importe: -236.22, saldo: 3959.88, tipo: 'Gasto' },
-          { fecha: '04 Mar 2026', concepto: 'WWW.AMAZON', importe: -91.04, saldo: 4142.90, tipo: 'Gasto' },
-          { fecha: '03 Mar 2026', concepto: 'EDISTRIBUCION REDES DIGITALES SL', importe: -126.14, saldo: 4233.94, tipo: 'Gasto' },
-          { fecha: '03 Mar 2026', concepto: 'FERRETERIA LEPANT', importe: -24.00, saldo: 4366.08, tipo: 'Gasto' },
-          { fecha: '02 Mar 2026', concepto: 'Pinturas Andres Valero Sl', importe: -32.30, saldo: 4390.08, tipo: 'Gasto' },
-          { fecha: '02 Mar 2026', concepto: 'Pinturas Andres Valero Sl', importe: -52.20, saldo: 4428.38, tipo: 'Gasto' },
-          { fecha: '02 Mar 2026', concepto: 'LEROY MERLIN ES', importe: -185.91, saldo: 4486.58, tipo: 'Gasto' },
-          { fecha: '02 Mar 2026', concepto: 'Mercancia Hasu Activos Inmobiliarios SL', importe: -720.00, saldo: 4672.49, tipo: 'Gasto' },
-          { fecha: '25 Feb 2026', concepto: 'Pinturas Andres Valero Sl — pintura Zurgena', importe: -44.90, saldo: 5392.49, tipo: 'Gasto' },
-          { fecha: '25 Feb 2026', concepto: 'MADERAS VIUDEZ', importe: -7.47, saldo: 5443.39, tipo: 'Gasto' },
-          { fecha: '21 Feb 2026', concepto: 'AMAZON (devolución)', importe: 172.90, saldo: 5450.86, tipo: 'Ingreso' },
-          { fecha: '20 Feb 2026', concepto: 'FERRETERIA TAPIA', importe: -21.50, saldo: 5277.96, tipo: 'Gasto' },
-          { fecha: '18 Feb 2026', concepto: 'AMAZON', importe: -172.90, saldo: 5299.46, tipo: 'Gasto' },
-          { fecha: '18 Feb 2026', concepto: 'AMAZON', importe: -69.90, saldo: 5472.36, tipo: 'Gasto' },
-          { fecha: '18 Feb 2026', concepto: 'AMAZON', importe: -22.55, saldo: 5542.26, tipo: 'Gasto' },
-          { fecha: '17 Feb 2026', concepto: 'Papel cinta carpi — PINTURAS ANDRES VALERO SL', importe: -15.70, saldo: 5564.81, tipo: 'Gasto' },
-          { fecha: '17 Feb 2026', concepto: 'INST ELÉCTRICAS Y CLIMA JPADILLA', importe: -563.38, saldo: 5586.51, tipo: 'Gasto' },
-          { fecha: '14 Feb 2026', concepto: 'AMZNBusiness (devolución)', importe: 167.91, saldo: 6149.89, tipo: 'Ingreso' },
-          { fecha: '13 Feb 2026', concepto: 'AMAZON', importe: -108.33, saldo: 5981.98, tipo: 'Gasto' },
-          { fecha: '13 Feb 2026', concepto: 'AMAZON', importe: -48.78, saldo: 6090.31, tipo: 'Gasto' },
-          { fecha: '12 Feb 2026', concepto: 'AMAZON', importe: -218.99, saldo: 6139.09, tipo: 'Gasto' },
-          { fecha: '12 Feb 2026', concepto: 'LEROY MERLIN ES', importe: -436.10, saldo: 6358.08, tipo: 'Gasto' },
-          { fecha: '12 Feb 2026', concepto: 'AMAZON', importe: -269.99, saldo: 6794.18, tipo: 'Gasto' },
-          { fecha: '12 Feb 2026', concepto: 'AMAZON', importe: -131.00, saldo: 7064.17, tipo: 'Gasto' },
-          { fecha: '11 Feb 2026', concepto: 'AMAZON', importe: -61.00, saldo: 7195.17, tipo: 'Gasto' },
-          { fecha: '10 Feb 2026', concepto: 'LEROY MERLIN ALMERÍA', importe: -1683.20, saldo: 7317.17, tipo: 'Gasto' },
-          { fecha: '10 Feb 2026', concepto: 'AMAZON', importe: -172.90, saldo: 9000.37, tipo: 'Gasto' },
-          { fecha: '09 Feb 2026', concepto: 'PINTURAS ANDRES VALERO SL — cinta', importe: -26.05, saldo: 9173.27, tipo: 'Gasto' },
-          { fecha: '08 Feb 2026', concepto: 'CUOTA T. V.Ele.Bu', importe: -33.00, saldo: 9213.67, tipo: 'Gasto' },
-          { fecha: '03 Feb 2026', concepto: 'AMZNBusiness (devolución)', importe: 167.91, saldo: 9246.67, tipo: 'Ingreso' },
-          { fecha: '29 Ene 2026', concepto: 'PINTURAS VALERO', importe: -916.40, saldo: 9078.76, tipo: 'Gasto' },
-          { fecha: '29 Ene 2026', concepto: 'NOTARIA ALBOX', importe: -604.32, saldo: 9995.16, tipo: 'Gasto' },
-          { fecha: '29 Ene 2026', concepto: 'Fianza Gestión Ayuntamiento Zurgena', importe: -40.00, saldo: 10767.39, tipo: 'Gasto' },
-          { fecha: '29 Ene 2026', concepto: 'Lic Obra Menor — AYUNTAMIENTO ZURGENA', importe: -23.20, saldo: 10813.39, tipo: 'Gasto' },
-          { fecha: '27 Ene 2026', concepto: 'JUNTA ANDALUCIA', importe: -1120.00, saldo: 10842.59, tipo: 'Gasto' },
-          { fecha: '24 Ene 2026', concepto: 'TRANSFER — Jose Luis Zurano Parra', importe: 4000.00, saldo: 11962.59, tipo: 'Ingreso' },
-          { fecha: '23 Ene 2026', concepto: 'AMAZON', importe: -167.89, saldo: 8130.50, tipo: 'Gasto' },
-          { fecha: '22 Ene 2026', concepto: 'TRANSFER — Jose Luis Zurano Parra', importe: 5000.00, saldo: 8298.39, tipo: 'Ingreso' },
-          { fecha: '21 Ene 2026', concepto: 'Compra activo — Hasu Activos Inmobiliarios SL', importe: -53200.00, saldo: 3298.39, tipo: 'Gasto' },
-          { fecha: '13 Ene 2026', concepto: 'TRANSFER — Jose Luis Zurano Parra', importe: 23300.00, saldo: 56500.80, tipo: 'Ingreso' },
-          { fecha: '12 Ene 2026', concepto: 'TRASPASO apertura cuenta JV', importe: 33200.00, saldo: 33200.80, tipo: 'Ingreso' },
-          { fecha: '22 Dic 2025', concepto: 'ARRAS — GLOBAL PANTELARIA S.A', importe: -2800.00, saldo: 0.80, tipo: 'Gasto' },
-          { fecha: '22 Dic 2025', concepto: 'TRASPASO apertura', importe: 2800.00, saldo: 2800.00, tipo: 'Ingreso' },
-        ];
+        // Calcular saldo acumulado desde la BD
+        const movsOrdenados = [...(movRaw || [])].reverse();
+        let saldoAcumulado = 0;
+        const movsConSaldo = movsOrdenados.map((m: any) => {
+          saldoAcumulado += m.monto;
+          return { ...m, saldoAcum: saldoAcumulado };
+        }).reverse();
+
+        const movimientos: Movimiento[] = movsConSaldo.map((m: any) => ({
+          fecha: new Date(m.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
+          concepto: m.concepto,
+          importe: m.monto,
+          saldo: Math.round(m.saldoAcum * 100) / 100,
+          tipo: m.tipo as 'Ingreso' | 'Gasto',
+        }));
 
         operacionesConDatos.push({
           id: op.id,
-          inmueble_nombre: (op.inmuebles as any)?.nombre || 'Operación',
+          inmueble_nombre: inmuebleNombre || 'Operación',
           inmueble_ubicacion: 'Zurgena, Almería',
           tipo: 'JV',
           capital_invertido: op.capital_invertido,
@@ -420,11 +399,10 @@ export default function InversorPortal() {
           avance: op.avance,
           hitos: hitos || [],
           bitacora: (bitacora || []) as Bitacora[],
-          movimientos: movimientosPDF,
+          movimientos,
         });
       }
-
-      setInversor({ nombre: inversorData.nombre, desde: inversorData.desde, operaciones: operacionesConDatos });
+            setInversor({ nombre: inversorData.nombre, desde: inversorData.desde, operaciones: operacionesConDatos });
     } catch (err) {
       console.error(err);
     } finally {
