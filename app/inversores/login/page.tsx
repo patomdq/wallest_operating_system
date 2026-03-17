@@ -11,6 +11,7 @@ export default function InversorLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
@@ -169,17 +170,49 @@ export default function InversorLoginPage() {
                 </div>
               )}
 
+              {/* T&C */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0' }}>
+                <input
+                  type="checkbox"
+                  id="terminos"
+                  checked={aceptaTerminos}
+                  onChange={e => setAceptaTerminos(e.target.checked)}
+                  style={{ marginTop: 2, accentColor: '#c9a84c', cursor: 'pointer', flexShrink: 0 }}
+                />
+                <label htmlFor="terminos" style={{ fontSize: 11, color: '#888', lineHeight: 1.5, cursor: 'pointer' }}>
+                  He leído y acepto los{' '}
+                  <a
+                    href="https://wallest.pro/terminos-y-condiciones"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#c9a84c', textDecoration: 'underline' }}
+                  >
+                    Términos y Condiciones
+                  </a>
+                  {' '}y la{' '}
+                  <a
+                    href="https://wallest.pro/politica-de-privacidad"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#c9a84c', textDecoration: 'underline' }}
+                  >
+                    Política de Privacidad
+                  </a>
+                  {' '}de Hasu Activos Inmobiliarios.
+                </label>
+              </div>
+
               {/* Submit */}
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !aceptaTerminos}
                 style={{
                   width: '100%', padding: '13px',
                   background: 'linear-gradient(135deg, #c9a84c, #a07830)',
                   border: 'none', borderRadius: 12,
                   color: '#070705', fontSize: 13, fontWeight: 700,
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  opacity: isLoading ? 0.7 : 1,
+                  cursor: (isLoading || !aceptaTerminos) ? 'not-allowed' : 'pointer',
+                  opacity: (isLoading || !aceptaTerminos) ? 0.5 : 1,
                   letterSpacing: '0.5px',
                   fontFamily: 'inherit',
                   marginTop: 4,
