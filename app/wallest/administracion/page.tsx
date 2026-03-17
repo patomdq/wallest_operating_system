@@ -218,7 +218,7 @@ export default function AdministracionPage() {
       tipo: formData.tipo,
       categoria: formData.categoria,
       concepto: formData.concepto,
-      monto: parseFloat(formData.monto) || 0,
+      monto: formData.tipo === 'Gasto' ? -(Math.abs(parseFloat(formData.monto) || 0)) : Math.abs(parseFloat(formData.monto) || 0),
       cuenta: formData.cuenta,
       forma_pago: formData.forma_pago,
       proyecto_id: formData.proyecto_id || null,
