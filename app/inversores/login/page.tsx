@@ -198,7 +198,7 @@ export default function InversorLoginPage() {
                   >
                     Política de Privacidad
                   </a>
-                  {' '}de Hasu Activos Inmobiliarios.
+                  {' '}de Hasu Activos Inmobiliarios SL
                 </label>
               </div>
 
