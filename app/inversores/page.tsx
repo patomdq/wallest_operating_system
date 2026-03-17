@@ -218,6 +218,71 @@ function OperacionCard({ op, expanded, onToggle }: { op: Operacion; expanded: bo
           ))}
         </div>
 
+        {/* Escenarios */}
+        <div style={{ marginTop: 20, borderTop: '1px solid #1a1a14', paddingTop: 16 }}>
+          <p style={{ margin: '0 0 12px', fontSize: 10, color: '#777', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+            Escenarios proyectados · Calculado sobre costo estimado al inicio de la operación
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            {[
+              {
+                label: 'Escenario Conservador',
+                precioVenta: 90000,
+                color: '#ef4444',
+                borderColor: '#ef444430',
+                bgColor: '#1a0a0a',
+              },
+              {
+                label: 'Escenario Realista',
+                precioVenta: 100000,
+                color: '#c9a84c',
+                borderColor: '#c9a84c30',
+                bgColor: '#111008',
+              },
+              {
+                label: 'Escenario Optimista',
+                precioVenta: 110000,
+                color: '#4ade80',
+                borderColor: '#4ade8030',
+                bgColor: '#0a1a0e',
+              },
+            ].map((esc) => {
+              const costoOperacion = op.capital_total_operacion;
+              const beneficioBruto = esc.precioVenta - costoOperacion;
+              const tuBeneficio = beneficioBruto * (op.participacion / 100);
+              const rentabilidad = op.capital_invertido > 0 ? (tuBeneficio / op.capital_invertido) * 100 : 0;
+              const rentAnualizada = op.duracion_meses > 0 ? (rentabilidad / (op.duracion_meses / 12)) : 0;
+              return (
+                <div key={esc.label} style={{
+                  background: esc.bgColor,
+                  border: `1px solid ${esc.borderColor}`,
+                  borderRadius: 12, padding: '14px 16px',
+                }}>
+                  <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 700, color: esc.color }}>{esc.label}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 9, color: '#666', textTransform: 'uppercase', letterSpacing: '1px' }}>Precio venta est.</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 700, color: '#f0e6c8' }}>{fmt(esc.precioVenta)}</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 9, color: '#666', textTransform: 'uppercase', letterSpacing: '1px' }}>Tu beneficio</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 700, color: esc.color }}>{fmt(tuBeneficio)}</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 9, color: '#666', textTransform: 'uppercase', letterSpacing: '1px' }}>Rentabilidad</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 700, color: esc.color }}>{rentabilidad.toFixed(2)}%</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 9, color: '#666', textTransform: 'uppercase', letterSpacing: '1px' }}>Rentab. anualizada</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 700, color: esc.color }}>{rentAnualizada.toFixed(2)}%</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
           <span style={{ fontSize: 10, color: '#555', letterSpacing: '1px' }}>
             {expanded ? '▲ OCULTAR DETALLE' : '▼ VER DETALLE'}
