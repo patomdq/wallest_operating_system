@@ -16,6 +16,7 @@ type MovimientoEmpresa = {
   proyecto_id?: string | null;
   proveedor?: string | null;
   observaciones?: string | null;
+  numero_factura?: string | null;
   created_at?: string;
   proyecto_nombre?: string;
 };
@@ -91,7 +92,8 @@ export default function AdministracionPage() {
     forma_pago: '',
     proyecto_id: '',
     proveedor: '',
-    observaciones: ''
+    observaciones: '',
+    numero_factura: ''
   });
 
   useEffect(() => {
@@ -223,7 +225,8 @@ export default function AdministracionPage() {
       forma_pago: formData.forma_pago,
       proyecto_id: formData.proyecto_id || null,
       proveedor: formData.proveedor || null,
-      observaciones: formData.observaciones || null
+      observaciones: formData.observaciones || null,
+      numero_factura: formData.numero_factura || null
     };
 
     const financiasData = {
@@ -370,7 +373,8 @@ export default function AdministracionPage() {
       forma_pago: '',
       proyecto_id: '',
       proveedor: '',
-      observaciones: ''
+      observaciones: '',
+      numero_factura: ''
     });
     setShowForm(false);
     setEditingId(null);
@@ -389,7 +393,8 @@ export default function AdministracionPage() {
       forma_pago: movimiento.forma_pago,
       proyecto_id: movimiento.proyecto_id || '',
       proveedor: movimiento.proveedor || '',
-      observaciones: movimiento.observaciones || ''
+      observaciones: movimiento.observaciones || '',
+      numero_factura: movimiento.numero_factura || ''
     });
     setEditingId(movimiento.id);
     setShowForm(true);
@@ -642,6 +647,17 @@ export default function AdministracionPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm text-wos-text-muted mb-2">Número de factura</label>
+              <input
+                type="text"
+                value={formData.numero_factura}
+                onChange={(e) => setFormData({ ...formData, numero_factura: e.target.value })}
+                className="w-full bg-wos-bg border border-wos-border rounded-lg px-4 py-2 text-wos-text focus:outline-none focus:border-wos-accent"
+                placeholder="Ej: F-2024-001"
+              />
+            </div>
+
             <div className="md:col-span-2">
               <label className="block text-sm text-wos-text-muted mb-2">Observaciones</label>
               <textarea
@@ -739,6 +755,7 @@ export default function AdministracionPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-wos-text-muted uppercase">Cuenta</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-wos-text-muted uppercase">Forma Pago</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-wos-text-muted uppercase">Proveedor</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-wos-text-muted uppercase">Nº Factura</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-wos-text-muted uppercase">Acciones</th>
                 </tr>
               </thead>
@@ -770,6 +787,7 @@ export default function AdministracionPage() {
                     <td className="px-4 py-3 text-wos-text">{mov.cuenta}</td>
                     <td className="px-4 py-3 text-wos-text">{mov.forma_pago}</td>
                     <td className="px-4 py-3 text-wos-text-muted">{mov.proveedor || '-'}</td>
+                    <td className="px-4 py-3 text-wos-text-muted">{mov.numero_factura || '-'}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2 justify-center">
                         <button
