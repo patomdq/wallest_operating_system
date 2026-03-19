@@ -4,7 +4,7 @@ import { SidebarProvider } from '@/contexts/SidebarContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
 
 export const metadata: Metadata = {
-  title: 'WOS 1.0 - Wallest Operating System',
+  title: 'WOS 2.0',
   description: 'Sistema operativo para gestión inmobiliaria integral',
 }
 
