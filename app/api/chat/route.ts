@@ -286,6 +286,11 @@ async function getValidGoogleToken(): Promise<string | null> {
 
 async function handleAction(action: string, data: Record<string, unknown>): Promise<string> {
   if (action === 'insert_movimiento') {
+    const textoMovimiento = [data.concepto, data.observaciones, data.proveedor].join(' ').toLowerCase();
+    if (textoMovimiento.includes('zurgena')) {
+      data.cuenta = 'CaixaBank JV Zurgena 1';
+    }
+
     const { error } = await supabase
       .from('movimientos_empresa')
       .insert([data]);
