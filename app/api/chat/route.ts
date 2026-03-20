@@ -18,12 +18,13 @@ const pendingLists = new Map<string, { items: Array<{ n: number; id: string }>; 
 function savePendingList(items: Array<{ n: number; id: string }>): string {
   // Limpiar sesiones expiradas
   const now = Date.now();
-  for (const [key, val] of pendingLists.entries()) {
-    if (val.expires < now) pendingLists.delete(key);
-  }
-  const sessionId = Math.random().toString(36).slice(2, 10);
-  pendingLists.set(sessionId, { items, expires: now + 15 * 60 * 1000 }); // 15 min TTL
-  return sessionId;
+  Array.from(pendingLists.keys()).forEach(key => {
+    const val = pendingLists.get(key);
+    if (val && val.expires < now) pendingLists.delete(key);
+  });
+  const sid = Math.random().toString(36).slice(2, 10);
+  pendingLists.set(sid, { items, expires: now + 15 * 60 * 1000 }); // 15 min TTL
+  return sid;
 }
 
 function resolveListItem(sessionId: string, n: number): string | null {
@@ -759,9 +760,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ response: responseText, success: true });
 
   } catch (error) {
-    console.error('Error:', error);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('Error en /api/chat:', errMsg);
     return NextResponse.json(
-      { error: 'Error procesando el mensaje', success: false },
+      { error: errMsg, response: `Error interno: ${errMsg}`, success: false },
       { status: 500 }
     );
   }

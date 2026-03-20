@@ -74,7 +74,7 @@ export default function WOSChat() {
         }),
       });
       const data = await response.json();
-      const raw = data.success ? data.response : 'Error al procesar el mensaje.';
+      const raw = data.success ? data.response : (data.response || 'Error al procesar el mensaje.');
       if (data.sessionId) setSessionId(data.sessionId);
       setMessages([...newMessages, {
         role: 'assistant',
