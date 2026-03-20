@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 
 interface Message {
   role: 'user' | 'assistant';
-  content: string;
+  content: string;   // raw — siempre se envía al servidor intacto
+  display?: string;  // stripeado — solo para el render visual
 }
 
 function stripActionJson(text: string): string {
@@ -24,8 +25,7 @@ function stripActionJson(text: string): string {
 }
 
 function formatMessage(text: string) {
-  const cleaned = stripActionJson(text);
-  const lines = cleaned.split('\n').filter(l => l.trim() !== '');
+  const lines = text.split('\n').filter(l => l.trim() !== '');
   return lines.map((line, i) => {
     if (line.startsWith('- ') || line.startsWith('• ')) {
       return (
@@ -72,12 +72,14 @@ export default function WOSChat() {
         }),
       });
       const data = await response.json();
+      const raw = data.success ? data.response : 'Error al procesar el mensaje.';
       setMessages([...newMessages, {
         role: 'assistant',
-        content: data.success ? data.response : 'Error al procesar el mensaje.'
+        content: raw,
+        display: stripActionJson(raw)
       }]);
     } catch {
-      setMessages([...newMessages, { role: 'assistant', content: 'Error de conexión.' }]);
+      setMessages([...newMessages, { role: 'assistant', content: 'Error de conexión.', display: 'Error de conexión.' }]);
     } finally {
       setLoading(false);
     }
@@ -164,7 +166,7 @@ export default function WOSChat() {
                     : 'bg-[#1e1e1e] text-gray-200 border border-gray-700 rounded-bl-sm'
                   }
                 `}>
-                  {msg.role === 'assistant' ? formatMessage(msg.content) : msg.content}
+                  {msg.role === 'assistant' ? formatMessage(msg.display ?? msg.content) : msg.content}
                 </div>
               </div>
             ))}
