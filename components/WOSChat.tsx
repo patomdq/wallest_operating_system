@@ -9,9 +9,15 @@ interface Message {
 
 function stripActionJson(text: string): string {
   return text
+    // Bloque de contexto completo
+    .replace(/===\s*DATOS HASU\s*===[\s\S]*?===\s*FIN\s*===/g, '')
+    // Líneas de etiquetas de contexto (MOVIMIENTOS: [...], SALDO_ACTUAL: [...], etc.)
+    .replace(/^(MOVIMIENTOS|SALDO_ACTUAL|SALDO_POR_CUENTA|INMUEBLES|REFORMAS|PARTIDAS|ITEMS|EVENTOS|TAREAS|LEADS|PROVEEDORES|MATERIALES|COMERCIALIZACION|TRANSACCIONES|FECHA_HOY):.+$/gm, '')
+    // Marcadores internos
     .replace(/\s*⟪pending:[\s\S]*?⟫/g, '')
     .replace(/\s*⟨id:[^⟩]+⟩/g, '')
     .replace(/\s*\[id:[^\]]+\]/g, '')
+    // JSON de acción al final
     .replace(/\s*\{[\s\S]*"action"\s*:[\s\S]*\}\s*$/, '')
     .trim();
 }
