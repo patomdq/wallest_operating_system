@@ -118,6 +118,7 @@ VALORES VÁLIDOS:
 
 REGLAS:
 - Si falta monto o concepto en un movimiento, pregunta antes de generar el JSON
+- Antes de ejecutar delete_movimiento, busca coincidencias en MOVIMIENTOS. Si hay más de una, lista todas numeradas con formato "N. [fecha] — [concepto] — [monto]€" y pregunta cuál quiere eliminar. Solo ejecuta el JSON cuando el usuario confirme con un número.
 - Si el usuario menciona una partida por nombre, búscala en PARTIDAS y usa su id
 - Si el usuario menciona un item por nombre, búscalo en ITEMS y usa su id
 - Solo un JSON por respuesta, nunca texto adicional junto al JSON
