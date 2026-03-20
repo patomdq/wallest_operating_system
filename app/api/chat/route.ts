@@ -91,6 +91,12 @@ ACCIONES DISPONIBLES — responde ÚNICAMENTE con el JSON exacto cuando el usuar
 22. CREAR SIMULACIÓN CALCULADORA:
 {"action":"insert_simulacion","data":{"nombre":"","direccion":"","ciudad":"","tipo_inmueble":"","duracion_meses":12,"precio_compra_estimado":0,"reforma_estimado":0,"gastos_compraventa_estimado":0,"itp_estimado":0,"precio_venta_pesimista":0,"precio_venta_realista":0,"precio_venta_optimista":0,"observaciones":""}}
 
+23. ELIMINAR MOVIMIENTO:
+{"action":"delete_movimiento","data":{"movimiento_id":""}}
+
+24. ELIMINAR TAREA:
+{"action":"delete_tarea","data":{"tarea_id":""}}
+
 VALORES VÁLIDOS:
 - tipo movimiento: "Gasto" o "Ingreso"
 - categoria movimiento: Materiales, Servicios, Impuestos, Sueldos, Honorarios, Suministros, Seguros, Gestoría, Notaría, Registro, Comunidad, Legal, Contable, Marketing, Comisiones, Arras, Ventas, Saldo Inicial, Otros
@@ -103,6 +109,7 @@ VALORES VÁLIDOS:
 - estado tarea: "Pendiente", "En curso", "Completada"
 - estado lead: "Nuevo", "Contactado", "En Oferta", "Cerrado"
 - tarea_id: búscalo en TAREAS por el título que mencione el usuario
+- movimiento_id: búscalo en MOVIMIENTOS por concepto, fecha o monto que mencione el usuario
 - evento_id: búscalo en EVENTOS por el título, usa SIEMPRE el campo "id" UUID completo, nunca un número
 - proveedor_id: búscalo en PROVEEDORES por el nombre que mencione el usuario
 - lead_id: búscalo en LEADS por el nombre que mencione el usuario
@@ -548,6 +555,19 @@ if (action === 'delete_evento') {
     if (error) return `Error al crear la simulación: ${error.message}`;
     return `Simulación "${data.nombre}" creada correctamente.`;
   }
+
+  if (action === 'delete_movimiento') {
+    const { error } = await supabase.from('movimientos_empresa').delete().eq('id', data.movimiento_id);
+    if (error) return `Error al eliminar el movimiento: ${error.message}`;
+    return `Movimiento eliminado correctamente.`;
+  }
+
+  if (action === 'delete_tarea') {
+    const { error } = await supabase.from('tareas_globales').delete().eq('id', data.tarea_id);
+    if (error) return `Error al eliminar la tarea: ${error.message}`;
+    return `Tarea eliminada correctamente.`;
+  }
+
   return 'Acción no reconocida.';
 }
 
