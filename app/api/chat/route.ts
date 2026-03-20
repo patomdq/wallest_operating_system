@@ -118,7 +118,7 @@ VALORES VÁLIDOS:
 
 REGLAS:
 - Si falta monto o concepto en un movimiento, pregunta antes de generar el JSON
-- Antes de ejecutar delete_movimiento, busca coincidencias en MOVIMIENTOS. Si hay más de una, lista todas numeradas con formato "N. [fecha] — [concepto] — [monto]€ [id:UUID]" (incluye siempre el id real entre [id:...]) y pregunta cuál quiere eliminar. Cuando el usuario responda con un número, localiza ese número en tu mensaje anterior, extrae el id entre [id:...] y úsalo directamente en el JSON — no necesitas buscar en MOVIMIENTOS de nuevo.
+- Antes de ejecutar delete_movimiento, busca coincidencias en MOVIMIENTOS. Si hay más de una, lista TODAS sin límite con formato "N. [fecha] — [concepto] — [monto]€ ⟨id:UUID⟩" (incluye siempre el id real entre ⟨id:...⟩, estos marcadores son internos y no los ve el usuario) y pregunta cuál quiere eliminar. Cuando el usuario responda con un número, localiza ese número en tu mensaje anterior, extrae el id entre ⟨id:...⟩ y úsalo directamente en el JSON — no necesitas buscar en MOVIMIENTOS de nuevo.
 - Si el usuario menciona una partida por nombre, búscala en PARTIDAS y usa su id
 - Si el usuario menciona un item por nombre, búscalo en ITEMS y usa su id
 - Solo un JSON por respuesta, nunca texto adicional junto al JSON
@@ -595,7 +595,7 @@ export async function POST(request: NextRequest) {
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 512,
+      max_tokens: 1024,
       system: SYSTEM_PROMPT,
       messages,
     });
