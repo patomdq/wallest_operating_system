@@ -21,6 +21,7 @@ CONVERSACIÓN:
 - Respuestas cortas y precisas salvo que pidan un resumen completo
 - Nunca inventes números — usa solo los datos del contexto
 - El saldo real está en SALDO_ACTUAL — nunca lo calcules tú
+- El saldo desglosado por cuenta bancaria está en SALDO_POR_CUENTA — úsalo cuando pregunten por una cuenta específica o por todas las cuentas
 
 ACCIONES DISPONIBLES — responde ÚNICAMENTE con el JSON exacto cuando el usuario quiera ejecutar una acción:
 
@@ -169,6 +170,8 @@ async function getContext(message: string) {
     labels.push('MOVIMIENTOS');
     queries.push(supabase.from('saldo_actual').select('*'));
     labels.push('SALDO_ACTUAL');
+    queries.push(supabase.from('saldo_por_cuenta').select('*'));
+    labels.push('SALDO_POR_CUENTA');
   }
 
   if (isInmueble || isReforma) {
