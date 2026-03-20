@@ -285,9 +285,13 @@ async function getValidGoogleToken(): Promise<string | null> {
   }
 }
 
-async function handleAction(action: string, data: Record<string, unknown>): Promise<string> {
+async function handleAction(action: string, data: Record<string, unknown>, originalMessage: string = ''): Promise<string> {
   if (action === 'insert_movimiento') {
-    const textoMovimiento = [data.concepto, data.observaciones, data.proveedor].join(' ').toLowerCase();
+    // Sanitizar proyecto_id: string vacío → null para evitar FK constraint error
+    if (!data.proyecto_id) data.proyecto_id = null;
+
+    // Auto-assign cuenta Zurgena: chequear datos del movimiento + mensaje original del usuario
+    const textoMovimiento = [data.concepto, data.observaciones, data.proveedor, originalMessage].join(' ').toLowerCase();
     if (textoMovimiento.includes('zurgena')) {
       data.cuenta = 'CaixaBank JV Zurgena 1';
     }
@@ -605,7 +609,7 @@ export async function POST(request: NextRequest) {
     try {
       const parsed = JSON.parse(responseText.trim());
       if (parsed.action && parsed.data) {
-        const result = await handleAction(parsed.action, parsed.data);
+        const result = await handleAction(parsed.action, parsed.data, message);
         return NextResponse.json({ response: result, success: true });
       }
     } catch {
