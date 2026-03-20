@@ -652,6 +652,64 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 1b-bis. "elimina el N" sin sesión → resolver desde historial de conversación
+    if (numberMatch && !sessionId) {
+      const n = parseInt(numberMatch[1]);
+      const lastAssistant = [...conversationHistory].reverse().find(
+        (m: { role: string }) => m.role === 'assistant'
+      );
+      if (lastAssistant) {
+        // Buscar la línea N en el listado del mensaje anterior
+        const lineRegex = new RegExp(`(?:^|\\n)\\s*${n}[.)\\-]\\s+([^\\n]+)`);
+        const lineMatch = lastAssistant.content.match(lineRegex);
+        if (lineMatch) {
+          const rawLine = lineMatch[1].replace(/\*\*/g, '');
+
+          // Extraer fecha en formatos "DD mon YYYY" o "DD/MM/YYYY"
+          const meses: Record<string, string> = {
+            ene:'01', feb:'02', mar:'03', abr:'04', may:'05', jun:'06',
+            jul:'07', ago:'08', sep:'09', oct:'10', nov:'11', dic:'12'
+          };
+          let fecha: string | null = null;
+          const dmmyMatch = rawLine.match(/(\d{1,2})\s+(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)\s+(\d{4})/i);
+          if (dmmyMatch) {
+            fecha = `${dmmyMatch[3]}-${meses[dmmyMatch[2].toLowerCase()]}-${dmmyMatch[1].padStart(2,'0')}`;
+          }
+          const slashMatch = rawLine.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+          if (slashMatch) {
+            fecha = `${slashMatch[3]}-${slashMatch[2].padStart(2,'0')}-${slashMatch[1].padStart(2,'0')}`;
+          }
+
+          // Extraer concepto (quitar fecha, monto, info entre paréntesis)
+          const concepto = rawLine
+            .replace(/\d{1,2}\s+(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)\s+\d{4}/i, '')
+            .replace(/\d{1,2}\/\d{1,2}\/\d{4}/, '')
+            .replace(/[-—]\s*[-\d.,]+€.*/, '')
+            .replace(/\(.*?\)/g, '')
+            .replace(/^[-—\s]+|[-—\s]+$/g, '')
+            .trim();
+
+          console.log('[HIST] fecha:', fecha, '| concepto:', concepto);
+
+          if (fecha && concepto) {
+            const { data: movs } = await supabase
+              .from('movimientos_empresa')
+              .select('id, fecha, concepto, monto, cuenta')
+              .eq('fecha', fecha)
+              .ilike('concepto', `%${concepto}%`);
+
+            if (movs && movs.length === 1) {
+              const mov = movs[0];
+              const pending = JSON.stringify({ action: 'delete_movimiento', data: { movimiento_id: mov.id } });
+              const resp = `¿Elimino este movimiento?\n- ${mov.fecha} — ${mov.concepto} — ${Math.abs(mov.monto)}€\n\n¿Confirmás? ⟪pending:${pending}⟫`;
+              return NextResponse.json({ response: resp, success: true });
+            }
+            // Si hay 0 o >1 matches, sigue al flujo normal
+          }
+        }
+      }
+    }
+
     // 1b. Intent de eliminar movimiento → búsqueda server-side + sesión
     const deleteIntent = /\b(elimin[ao]r?|borr[ao]r?|quitar|suprim[ei]r?)\b/i.test(message) &&
       /\b(movimiento|gasto|pago|ingreso|cobro|factura|transferencia)\b/i.test(message);
