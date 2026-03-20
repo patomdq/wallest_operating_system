@@ -611,17 +611,30 @@ export async function POST(request: NextRequest) {
 
     // 1. Interceptar selección numérica de lista (ej: "el 1", "elimina el 2", "3")
     const numberMatch = message.trim().match(/^(?:elimin[ao]r?\s+)?(?:el\s+)?(\d+)\s*[.!]?$/i);
+    console.log('[CHAT] numberMatch:', numberMatch, '| historial:', conversationHistory.length);
     if (numberMatch && conversationHistory.length > 0) {
       const n = parseInt(numberMatch[1]);
       const lastAssistant = [...conversationHistory].reverse().find((m: { role: string }) => m.role === 'assistant');
+      console.log('[CHAT] lastAssistant snippet:', lastAssistant?.content?.slice(0, 400));
       if (lastAssistant) {
-        const idPattern = new RegExp(`${n}\\..*?⟨id:([^⟩]+)⟩`);
-        const idMatch = lastAssistant.content.match(idPattern);
+        // Intentar múltiples formatos de brackets que el modelo puede usar
+        const idPatterns = [
+          new RegExp(`${n}\\..*?⟨id:([^⟩\n]+)⟩`),          // ⟨⟩ Mathematical
+          new RegExp(`${n}\\..*?<id:([^>\n]+)>`),             // <>
+          new RegExp(`${n}\\..*?\\[id:([^\\]\n]+)\\]`),       // []
+          new RegExp(`${n}\\..*?\\(id:([^)\n]+)\\)`),         // ()
+          new RegExp(`${n}\\..*?id:\\s*([a-f0-9-]{36})`),     // "id: UUID" sin brackets
+        ];
+        let idMatch: RegExpMatchArray | null = null;
+        for (const pat of idPatterns) {
+          idMatch = lastAssistant.content.match(pat);
+          if (idMatch) { console.log('[CHAT] idPattern matched:', pat.toString(), '→', idMatch[1]); break; }
+        }
         if (idMatch) {
-          console.log(`[CHAT] número ${n} seleccionado de lista, movimiento_id:`, idMatch[1]);
-          const result = await handleAction('delete_movimiento', { movimiento_id: idMatch[1] }, message);
+          const result = await handleAction('delete_movimiento', { movimiento_id: idMatch[1].trim() }, message);
           return NextResponse.json({ response: result, success: true });
         }
+        console.log('[CHAT] no se encontró id en el mensaje anterior para el número', n);
       }
     }
 
