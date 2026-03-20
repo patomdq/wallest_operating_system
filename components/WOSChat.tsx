@@ -8,9 +8,7 @@ interface Message {
 }
 
 function stripActionJson(text: string): string {
-  const jsonStart = text.search(/\{[\s\S]*"action"\s*:/);
-  if (jsonStart === -1) return text;
-  return text.slice(0, jsonStart).trim();
+  return text.replace(/\s*\{[\s\S]*"action"\s*:[\s\S]*\}\s*$/, '').trim();
 }
 
 function formatMessage(text: string) {
