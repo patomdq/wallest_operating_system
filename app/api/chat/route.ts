@@ -11,6 +11,30 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Sesiones de listas pendientes (delete multi-resultado)
+// Vive en el módulo del servidor — persiste entre requests en la misma instancia
+const pendingLists = new Map<string, { items: Array<{ n: number; id: string }>; expires: number }>();
+
+function savePendingList(items: Array<{ n: number; id: string }>): string {
+  // Limpiar sesiones expiradas
+  const now = Date.now();
+  for (const [key, val] of pendingLists.entries()) {
+    if (val.expires < now) pendingLists.delete(key);
+  }
+  const sessionId = Math.random().toString(36).slice(2, 10);
+  pendingLists.set(sessionId, { items, expires: now + 15 * 60 * 1000 }); // 15 min TTL
+  return sessionId;
+}
+
+function resolveListItem(sessionId: string, n: number): string | null {
+  const session = pendingLists.get(sessionId);
+  if (!session || session.expires < Date.now()) return null;
+  const item = session.items.find(x => x.n === n);
+  if (!item) return null;
+  pendingLists.delete(sessionId); // consumir sesión
+  return item.id;
+}
+
 const SYSTEM_PROMPT = `Eres el asistente operativo de Wallest (Hasu Activos Inmobiliarios SL), empresa española de compraventa y reforma de inmuebles.
 
 PERSONALIDAD: Directo, profesional, hablas como co-CEO no como asistente. Dices las cosas como son, sin rodeos, sin exagerar. Español de España en todo momento.
@@ -611,44 +635,29 @@ if (action === 'delete_evento') {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, conversationHistory = [] } = await request.json();
+    const { message, conversationHistory = [], sessionId = null } = await request.json();
 
-    console.log('[CHAT] message:', message);
+    console.log('[CHAT] message:', message, '| sessionId:', sessionId);
 
-    // 1a. Interceptar selección numérica de ⟦lista:...⟧ generada por el servidor
+    // 1a. Selección numérica con sessionId del servidor
     const numberMatch = message.trim().match(/^(?:elimin[ao]r?\s+)?(?:el\s+)?(\d+)\s*[.!]?$/i);
-    if (numberMatch && conversationHistory.length > 0) {
+    if (numberMatch && sessionId) {
       const n = parseInt(numberMatch[1]);
-      const lastAssistant = [...conversationHistory].reverse().find((m: { role: string }) => m.role === 'assistant');
-      console.log('[LISTA] numberMatch n:', n, '| lastAssistant existe:', !!lastAssistant);
-      if (lastAssistant) {
-        console.log('[LISTA] content (JSON):', JSON.stringify(lastAssistant.content.slice(0, 600)));
-        // Intentar con literal y con Unicode escape (U+27E6 / U+27E7)
-        const listaMatch =
-          lastAssistant.content.match(/⟦lista:([\s\S]*?)⟧/) ||
-          lastAssistant.content.match(/\u27E6lista:([\s\S]*?)\u27E7/);
-        console.log('[LISTA] listaMatch:', listaMatch ? listaMatch[1].slice(0, 100) : null);
-        if (listaMatch) {
-          try {
-            const lista: Array<{ n: number; id: string }> = JSON.parse(listaMatch[1]);
-            const item = lista.find(x => x.n === n);
-            console.log('[LISTA] item encontrado:', item);
-            if (item) {
-              const result = await handleAction('delete_movimiento', { movimiento_id: item.id }, message);
-              return NextResponse.json({ response: result, success: true });
-            }
-          } catch (e) { console.log('[LISTA] error parseando JSON de lista:', e); }
-        }
+      const movimientoId = resolveListItem(sessionId, n);
+      console.log('[LISTA] sessionId:', sessionId, '| n:', n, '| movimientoId resuelto:', movimientoId);
+      if (movimientoId) {
+        const result = await handleAction('delete_movimiento', { movimiento_id: movimientoId }, message);
+        return NextResponse.json({ response: result, success: true });
       }
     }
 
-    // 1b. Interceptar intent de eliminar movimiento → búsqueda y lista server-side
+    // 1b. Intent de eliminar movimiento → búsqueda server-side + sesión
     const deleteIntent = /\b(elimin[ao]r?|borr[ao]r?|quitar|suprim[ei]r?)\b/i.test(message) &&
       /\b(movimiento|gasto|pago|ingreso|cobro|factura|transferencia)\b/i.test(message);
     if (deleteIntent) {
-      const stopwords = /\b(elimin[ao]r?|borr[ao]r?|quitar|suprim[ei]r?|el|la|los|las|un|una|de|del|movimiento|gasto|pago|ingreso|cobro|este|ese|ese)\b/gi;
+      const stopwords = /\b(elimin[ao]r?|borr[ao]r?|quitar|suprim[ei]r?|el|la|los|las|un|una|de|del|movimiento|gasto|pago|ingreso|cobro|este|ese)\b/gi;
       const keywords = message.replace(stopwords, ' ').split(/\s+/).filter(k => k.length > 2);
-      console.log('[CHAT] deleteIntent keywords:', keywords);
+      console.log('[DELETE] keywords:', keywords);
 
       const { data: movimientos } = await supabase
         .from('movimientos_empresa')
@@ -661,7 +670,7 @@ export async function POST(request: NextRequest) {
         return keywords.length > 0 && keywords.some(k => texto.includes(k.toLowerCase()));
       });
 
-      console.log('[CHAT] matches encontrados:', matches.length, matches.map(m => ({ id: m.id, concepto: m.concepto })));
+      console.log('[DELETE] matches:', matches.length, matches.map(m => m.concepto));
 
       if (matches.length === 1) {
         const mov = matches[0];
@@ -671,14 +680,15 @@ export async function POST(request: NextRequest) {
       }
 
       if (matches.length > 1) {
-        const lista = matches.map((mov, i) => ({ n: i + 1, id: mov.id }));
+        const items = matches.map((mov, i) => ({ n: i + 1, id: mov.id }));
+        const newSessionId = savePendingList(items);
         const display = matches.map((mov, i) =>
           `${i + 1}. ${mov.fecha} — ${mov.concepto} — ${Math.abs(mov.monto)}€`
         ).join('\n');
-        const resp = `Encontré ${matches.length} movimientos:\n${display}\n\n¿Cuál querés eliminar?⟦lista:${JSON.stringify(lista)}⟧`;
-        return NextResponse.json({ response: resp, success: true });
+        const resp = `Encontré ${matches.length} movimientos:\n${display}\n\n¿Cuál querés eliminar?`;
+        return NextResponse.json({ response: resp, success: true, sessionId: newSessionId });
       }
-      // 0 matches → cae al flujo normal del modelo
+      // 0 matches → flujo normal del modelo
     }
 
     // 2. Interceptar confirmación de acción pendiente (⟪pending:...⟫)

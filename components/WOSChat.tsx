@@ -45,6 +45,7 @@ export default function WOSChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -68,11 +69,13 @@ export default function WOSChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          conversationHistory: newMessages.slice(-10)
+          conversationHistory: newMessages.slice(-10),
+          sessionId
         }),
       });
       const data = await response.json();
       const raw = data.success ? data.response : 'Error al procesar el mensaje.';
+      if (data.sessionId) setSessionId(data.sessionId);
       setMessages([...newMessages, {
         role: 'assistant',
         content: raw,
