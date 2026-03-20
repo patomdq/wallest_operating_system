@@ -8,7 +8,10 @@ interface Message {
 }
 
 function stripActionJson(text: string): string {
-  return text.replace(/\s*\{[\s\S]*"action"\s*:[\s\S]*\}\s*$/, '').trim();
+  return text
+    .replace(/\s*\[id:[a-f0-9-]{36}\]/g, '')
+    .replace(/\s*\{[\s\S]*"action"\s*:[\s\S]*\}\s*$/, '')
+    .trim();
 }
 
 function formatMessage(text: string) {
