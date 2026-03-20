@@ -607,7 +607,25 @@ export async function POST(request: NextRequest) {
   try {
     const { message, conversationHistory = [] } = await request.json();
 
-    // Interceptar confirmación de acción pendiente
+    console.log('[CHAT] message:', message);
+
+    // 1. Interceptar selección numérica de lista (ej: "el 1", "elimina el 2", "3")
+    const numberMatch = message.trim().match(/^(?:elimin[ao]r?\s+)?(?:el\s+)?(\d+)\s*[.!]?$/i);
+    if (numberMatch && conversationHistory.length > 0) {
+      const n = parseInt(numberMatch[1]);
+      const lastAssistant = [...conversationHistory].reverse().find((m: { role: string }) => m.role === 'assistant');
+      if (lastAssistant) {
+        const idPattern = new RegExp(`${n}\\..*?⟨id:([^⟩]+)⟩`);
+        const idMatch = lastAssistant.content.match(idPattern);
+        if (idMatch) {
+          console.log(`[CHAT] número ${n} seleccionado de lista, movimiento_id:`, idMatch[1]);
+          const result = await handleAction('delete_movimiento', { movimiento_id: idMatch[1] }, message);
+          return NextResponse.json({ response: result, success: true });
+        }
+      }
+    }
+
+    // 2. Interceptar confirmación de acción pendiente (⟪pending:...⟫)
     const isConfirmation = /^(sí|si|ok|dale|confirma|confirmar|correcto|exacto|adelante|va|venga|sí quiero|claro)\s*[.!]?$/i.test(message.trim());
     if (isConfirmation && conversationHistory.length > 0) {
       const lastAssistant = [...conversationHistory].reverse().find((m: { role: string }) => m.role === 'assistant');
@@ -617,6 +635,7 @@ export async function POST(request: NextRequest) {
           try {
             const pending = JSON.parse(pendingMatch[1]);
             if (pending.action && pending.data) {
+              console.log('[CHAT] ejecutando acción pendiente:', pending.action);
               const result = await handleAction(pending.action, pending.data, message);
               return NextResponse.json({ response: result, success: true });
             }
@@ -627,6 +646,7 @@ export async function POST(request: NextRequest) {
 
     const requiresContext = needsContext(message);
     const contextBlock = requiresContext ? await getContext(message) : '';
+    console.log('[CHAT] requiresContext:', requiresContext);
 
     const userContent = requiresContext
       ? `${contextBlock}\n\nMensaje: ${message}`
@@ -645,15 +665,29 @@ export async function POST(request: NextRequest) {
     });
 
     const responseText = response.content[0].type === 'text' ? response.content[0].text : '';
+    console.log('[CHAT] responseText:', responseText.slice(0, 300));
 
+    // 3. Intentar parsear JSON puro
     try {
       const parsed = JSON.parse(responseText.trim());
       if (parsed.action && parsed.data) {
+        console.log('[CHAT] acción detectada (JSON puro):', parsed.action);
         const result = await handleAction(parsed.action, parsed.data, message);
         return NextResponse.json({ response: result, success: true });
       }
-    } catch {
-      // Respuesta normal de texto
+    } catch { /* no es JSON puro */ }
+
+    // 4. Intentar extraer JSON de acción embebido en texto
+    const embeddedJson = responseText.match(/\{[\s\S]*?"action"\s*:[\s\S]*?"data"\s*:[\s\S]*?\}\s*\}?/);
+    if (embeddedJson) {
+      try {
+        const parsed = JSON.parse(embeddedJson[0]);
+        if (parsed.action && parsed.data) {
+          console.log('[CHAT] acción detectada (JSON embebido):', parsed.action);
+          const result = await handleAction(parsed.action, parsed.data, message);
+          return NextResponse.json({ response: result, success: true });
+        }
+      } catch { /* JSON malformado */ }
     }
 
     return NextResponse.json({ response: responseText, success: true });
