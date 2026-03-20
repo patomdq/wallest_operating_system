@@ -299,6 +299,7 @@ async function handleAction(action: string, data: Record<string, unknown>, origi
     const textoMovimiento = [data.concepto, data.observaciones, data.proveedor, originalMessage].join(' ').toLowerCase();
     if (textoMovimiento.includes('zurgena')) {
       data.cuenta = 'CaixaBank JV Zurgena 1';
+      data.proyecto_id = '9326ad4d-a0ba-4c4b-8f34-671d2b33cfd5';
     }
 
     const { error } = await supabase
@@ -573,6 +574,11 @@ if (action === 'delete_evento') {
 
   if (action === 'update_movimiento') {
     if (!data.proyecto_id) data.proyecto_id = null;
+    const textoUpdate = [data.concepto, data.observaciones, data.proveedor, originalMessage].join(' ').toLowerCase();
+    if (textoUpdate.includes('zurgena')) {
+      data.cuenta = 'CaixaBank JV Zurgena 1';
+      data.proyecto_id = '9326ad4d-a0ba-4c4b-8f34-671d2b33cfd5';
+    }
     const { movimiento_id, ...updates } = data;
     const { error } = await supabase
       .from('movimientos_empresa')
