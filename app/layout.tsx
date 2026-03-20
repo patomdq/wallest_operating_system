@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { SidebarProvider } from '@/contexts/SidebarContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
 
 export const metadata: Metadata = {
@@ -21,12 +22,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
+      {/* Script anti-flash: aplica la clase dark antes de que React hidrate */}
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('wos-theme');if(t==='dark'||!t)document.documentElement.classList.add('dark');})()` }} />
+      </head>
       <body className="bg-wos-bg text-wos-text">
-        <SidebarProvider>
-          <LayoutWrapper>
-            {children}
-          </LayoutWrapper>
-        </SidebarProvider>
+        <ThemeProvider>
+          <SidebarProvider>
+            <LayoutWrapper>
+              {children}
+            </LayoutWrapper>
+          </SidebarProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -6,22 +6,23 @@ const config: Config = {
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // ── Base tokens ────────────────────────────────
-        'wos-bg':           '#0a0a0a',
-        'wos-sidebar':      '#111111',
-        'wos-card':         '#161616',
-        'wos-card-hover':   '#1e1e1e',
-        'wos-border':       '#252525',
-        'wos-border-light': '#333333',
+        // ── Base tokens (CSS vars — cambian con light/dark) ───
+        'wos-bg':           'var(--wos-bg)',
+        'wos-sidebar':      'var(--wos-sidebar)',
+        'wos-card':         'var(--wos-card)',
+        'wos-card-hover':   'var(--wos-card-hover)',
+        'wos-border':       'var(--wos-border)',
+        'wos-border-light': 'var(--wos-border-light)',
 
-        // ── Texto BLANCO ───────────────────────────────
-        'wos-text':         '#ffffff',   // todo el texto principal
-        'wos-text-muted':   '#cccccc',   // texto secundario — gris claro legible
-        'wos-text-subtle':  '#888888',   // solo hints y placeholders
-        'wos-accent':       '#ffffff',   // títulos
+        // ── Texto ──────────────────────────────────────
+        'wos-text':         'var(--wos-text)',
+        'wos-text-muted':   'var(--wos-text-muted)',
+        'wos-text-subtle':  'var(--wos-text-subtle)',
+        'wos-accent':       'var(--wos-text)',   // títulos
 
         // ── Marca Wallest ──────────────────────────────
         'brand-orange':     '#F15A29',   // naranja marca

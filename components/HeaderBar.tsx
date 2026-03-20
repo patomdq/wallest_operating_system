@@ -1,7 +1,8 @@
 'use client';
 
-import { Menu, LogOut } from 'lucide-react';
+import { Menu, LogOut, Sun, Moon } from 'lucide-react';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect } from 'react';
@@ -46,7 +47,8 @@ function getPageInfo(pathname: string) {
 }
 
 export default function HeaderBar() {
-  const { toggleSidebar, isOpen } = useSidebar();
+  const { toggleSidebar } = useSidebar();
+  const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const { title, subtitle, area } = getPageInfo(pathname);
@@ -66,20 +68,14 @@ export default function HeaderBar() {
   };
 
   return (
-    <header
-      className="border-b border-wos-border px-4 flex items-center min-h-[56px] gap-3"
-      style={{ background: '#111111' }}
-    >
+    <header className="bg-wos-sidebar border-b border-wos-border px-4 flex items-center min-h-[56px] gap-3">
       {/* Hamburger */}
       <button
         onClick={toggleSidebar}
-        className="hamburger-menu p-1.5 rounded-lg transition-all flex-shrink-0"
-        style={{ background: 'transparent' }}
-        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#1e1e1e'}
-        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+        className="hamburger-menu p-1.5 rounded-lg transition-all flex-shrink-0 text-wos-text hover:bg-wos-card-hover"
         aria-label="Toggle menú"
       >
-        <Menu size={18} color="#ffffff" />
+        <Menu size={18} />
       </button>
 
       {/* Badge área + título */}
@@ -94,11 +90,11 @@ export default function HeaderBar() {
           </span>
         )}
         <div className="min-w-0">
-          <h1 className="text-[14px] font-semibold text-white truncate leading-tight">
+          <h1 className="text-[14px] font-semibold text-wos-text truncate leading-tight">
             {title}
           </h1>
           {subtitle && pathname !== '/' && (
-            <p className="text-[11px] hidden md:block leading-tight" style={{ color: '#888' }}>
+            <p className="text-[11px] text-wos-text-subtle hidden md:block leading-tight">
               {subtitle}
             </p>
           )}
@@ -109,6 +105,15 @@ export default function HeaderBar() {
       <div className="flex items-center gap-2 flex-shrink-0">
         <CambiarEntornoButton />
 
+        {/* Toggle claro/oscuro */}
+        <button
+          onClick={toggleTheme}
+          className="p-1.5 rounded-lg transition-all text-wos-text-subtle hover:text-wos-text hover:bg-wos-card-hover"
+          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+
         {userEmail && (
           <div className="hidden lg:flex items-center gap-2.5 pl-3 border-l border-wos-border">
             <div
@@ -118,21 +123,18 @@ export default function HeaderBar() {
               {userEmail.charAt(0).toUpperCase()}
             </div>
             <div className="text-right">
-              <p className="text-[12px] text-white leading-tight truncate max-w-[160px]">{userEmail}</p>
-              <p className="text-[10px] leading-tight" style={{ color: '#888' }}>Usuario</p>
+              <p className="text-[12px] text-wos-text leading-tight truncate max-w-[160px]">{userEmail}</p>
+              <p className="text-[10px] text-wos-text-subtle leading-tight">Usuario</p>
             </div>
           </div>
         )}
 
         <button
           onClick={handleSignOut}
-          className="p-1.5 rounded-lg transition-all group ml-1"
-          style={{ background: 'transparent' }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#1e1e1e'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+          className="p-1.5 rounded-lg transition-all ml-1 text-wos-text-subtle hover:text-wos-text hover:bg-wos-card-hover"
           title="Cerrar sesión"
         >
-          <LogOut size={16} color="#888" />
+          <LogOut size={16} />
         </button>
       </div>
     </header>
