@@ -7,8 +7,15 @@ interface Message {
   content: string;
 }
 
+function stripActionJson(text: string): string {
+  const jsonStart = text.search(/\{[\s\S]*"action"\s*:/);
+  if (jsonStart === -1) return text;
+  return text.slice(0, jsonStart).trim();
+}
+
 function formatMessage(text: string) {
-  const lines = text.split('\n').filter(l => l.trim() !== '');
+  const cleaned = stripActionJson(text);
+  const lines = cleaned.split('\n').filter(l => l.trim() !== '');
   return lines.map((line, i) => {
     if (line.startsWith('- ') || line.startsWith('• ')) {
       return (
