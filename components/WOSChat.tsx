@@ -9,6 +9,7 @@ interface Message {
 
 function stripActionJson(text: string): string {
   return text
+    .replace(/\s*⟪pending:[\s\S]*?⟫/g, '')
     .replace(/\s*⟨id:[^⟩]+⟩/g, '')
     .replace(/\s*\[id:[^\]]+\]/g, '')
     .replace(/\s*\{[\s\S]*"action"\s*:[\s\S]*\}\s*$/, '')

@@ -97,12 +97,16 @@ ACCIONES DISPONIBLES — responde ÚNICAMENTE con el JSON exacto cuando el usuar
 24. ELIMINAR TAREA:
 {"action":"delete_tarea","data":{"tarea_id":""}}
 
+25. ACTUALIZAR MOVIMIENTO:
+{"action":"update_movimiento","data":{"movimiento_id":"","fecha":"","tipo":"","categoria":"","concepto":"","monto":0,"cuenta":"","forma_pago":"","proveedor":"","proyecto_id":null,"observaciones":""}}
+
 VALORES VÁLIDOS:
 - tipo movimiento: "Gasto" o "Ingreso"
 - categoria movimiento: Materiales, Servicios, Impuestos, Sueldos, Honorarios, Suministros, Seguros, Gestoría, Notaría, Registro, Comunidad, Legal, Contable, Marketing, Comisiones, Arras, Ventas, Saldo Inicial, Otros
 - cuenta: Banco Sabadell, BBVA, CaixaBank, Santander, Caja, Otra — por defecto "CaixaBank"
 - forma_pago: Efectivo, Débito, Crédito, Transferencia, Bizum, Cheque
 - proyecto_id para Olula: "347d78d9-1de8-4639-8853-8262b0b962e9"
+- proyecto_id SIEMPRE debe ser el campo "id" de la tabla REFORMAS — nunca uses el id de INMUEBLES para este campo; si no hay reforma asociada usa null
 - estado partida: "pendiente", "en_curso", "ok"
 - fecha: usa FECHA_HOY si no especifican
 - prioridad tarea: "Alta", "Media", "Baja"
@@ -118,6 +122,7 @@ VALORES VÁLIDOS:
 
 REGLAS:
 - Si falta monto o concepto en un movimiento, pregunta antes de generar el JSON
+- Cuando necesites que el usuario confirme antes de ejecutar una acción, describe lo que vas a hacer en texto normal Y embebe la acción pendiente al final del mensaje como ⟪pending:{"action":"...","data":{...}}⟫ — el usuario no verá este marcador pero el sistema lo ejecutará automáticamente cuando confirme con "sí"
 - Antes de ejecutar delete_movimiento, busca coincidencias en MOVIMIENTOS. Si hay más de una, lista TODAS sin límite con formato "N. [fecha] — [concepto] — [monto]€ ⟨id:UUID⟩" (incluye siempre el id real entre ⟨id:...⟩, estos marcadores son internos y no los ve el usuario) y pregunta cuál quiere eliminar. Cuando el usuario responda con un número, localiza ese número en tu mensaje anterior, extrae el id entre ⟨id:...⟩ y úsalo directamente en el JSON — no necesitas buscar en MOVIMIENTOS de nuevo.
 - Si el usuario menciona una partida por nombre, búscala en PARTIDAS y usa su id
 - Si el usuario menciona un item por nombre, búscalo en ITEMS y usa su id
@@ -566,6 +571,17 @@ if (action === 'delete_evento') {
     return `Simulación "${data.nombre}" creada correctamente.`;
   }
 
+  if (action === 'update_movimiento') {
+    if (!data.proyecto_id) data.proyecto_id = null;
+    const { movimiento_id, ...updates } = data;
+    const { error } = await supabase
+      .from('movimientos_empresa')
+      .update(updates)
+      .eq('id', movimiento_id);
+    if (error) return `Error al actualizar el movimiento: ${error.message}`;
+    return `Movimiento actualizado correctamente.`;
+  }
+
   if (action === 'delete_movimiento') {
     const { error } = await supabase.from('movimientos_empresa').delete().eq('id', data.movimiento_id);
     if (error) return `Error al eliminar el movimiento: ${error.message}`;
@@ -584,6 +600,24 @@ if (action === 'delete_evento') {
 export async function POST(request: NextRequest) {
   try {
     const { message, conversationHistory = [] } = await request.json();
+
+    // Interceptar confirmación de acción pendiente
+    const isConfirmation = /^(sí|si|ok|dale|confirma|confirmar|correcto|exacto|adelante|va|venga|sí quiero|claro)\s*[.!]?$/i.test(message.trim());
+    if (isConfirmation && conversationHistory.length > 0) {
+      const lastAssistant = [...conversationHistory].reverse().find((m: { role: string }) => m.role === 'assistant');
+      if (lastAssistant) {
+        const pendingMatch = lastAssistant.content.match(/⟪pending:([\s\S]*?)⟫/);
+        if (pendingMatch) {
+          try {
+            const pending = JSON.parse(pendingMatch[1]);
+            if (pending.action && pending.data) {
+              const result = await handleAction(pending.action, pending.data, message);
+              return NextResponse.json({ response: result, success: true });
+            }
+          } catch { /* JSON inválido, continuar flujo normal */ }
+        }
+      }
+    }
 
     const requiresContext = needsContext(message);
     const contextBlock = requiresContext ? await getContext(message) : '';
