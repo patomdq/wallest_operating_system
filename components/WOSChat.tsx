@@ -115,7 +115,7 @@ export default function WOSChat() {
       {/* Ventana chat */}
       {isOpen && (
         <div className={`
-          fixed z-50 bg-[#0f0f0f] border border-gray-700 rounded-xl shadow-2xl flex flex-col
+          fixed z-50 bg-wos-bg border border-wos-border rounded-xl shadow-2xl flex flex-col
           transition-all duration-200
           bottom-0 left-0 right-0 top-0
           md:bottom-20 md:left-auto md:top-auto md:right-4
@@ -126,7 +126,7 @@ export default function WOSChat() {
         `}>
 
           {/* Header */}
-          <div className="bg-[#1a1a1a] border-b border-gray-700 px-4 py-3 rounded-t-xl flex items-center justify-between flex-shrink-0">
+          <div className="bg-wos-sidebar border-b border-wos-border px-4 py-3 rounded-t-xl flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
               <span className="text-orange-400 font-bold text-sm">WOS</span>
@@ -166,7 +166,7 @@ export default function WOSChat() {
                   max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed
                   ${msg.role === 'user'
                     ? 'bg-orange-500 text-white rounded-br-sm'
-                    : 'bg-[#1e1e1e] text-gray-200 border border-gray-700 rounded-bl-sm'
+                    : 'bg-wos-card text-wos-text border border-wos-border rounded-bl-sm'
                   }
                 `}>
                   {msg.role === 'assistant' ? formatMessage(msg.display ?? msg.content) : msg.content}
@@ -176,7 +176,7 @@ export default function WOSChat() {
             {loading && (
               <div className="flex items-end gap-2">
                 <div className="w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center text-xs text-white font-bold flex-shrink-0">W</div>
-                <div className="bg-[#1e1e1e] border border-gray-700 px-3 py-2 rounded-2xl rounded-bl-sm">
+                <div className="bg-wos-card border border-wos-border px-3 py-2 rounded-2xl rounded-bl-sm">
                   <div className="flex gap-1">
                     <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
                     <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}}/>
@@ -189,7 +189,7 @@ export default function WOSChat() {
           </div>
 
           {/* Input */}
-          <div className="p-3 border-t border-gray-700 flex gap-2 items-end flex-shrink-0">
+          <div className="p-3 border-t border-wos-border flex gap-2 items-end flex-shrink-0">
             <textarea
               ref={textareaRef}
               value={input}
@@ -197,7 +197,7 @@ export default function WOSChat() {
               onKeyDown={handleKeyDown}
               placeholder="Escribí tu mensaje..."
               rows={1}
-              className="flex-1 bg-[#1a1a1a] border border-gray-600 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 resize-none focus:outline-none focus:border-orange-400 transition-all"
+              className="flex-1 bg-wos-input-bg border border-wos-input-border rounded-xl px-3 py-2 text-sm text-wos-text placeholder:text-wos-text-subtle resize-none focus:outline-none focus:border-orange-400 transition-all"
               style={{ minHeight: '38px', maxHeight: '100px' }}
             />
             <button

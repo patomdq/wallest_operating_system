@@ -24,6 +24,10 @@ const config: Config = {
         'wos-text-subtle':  'var(--wos-text-subtle)',
         'wos-accent':       'var(--wos-text)',   // títulos
 
+        // ── Inputs ─────────────────────────────────────
+        'wos-input-bg':     'var(--wos-input-bg)',
+        'wos-input-border': 'var(--wos-input-border)',
+
         // ── Marca Wallest ──────────────────────────────
         'brand-orange':     '#F15A29',   // naranja marca
         'brand-orange-dim': '#c44a20',   // naranja hover

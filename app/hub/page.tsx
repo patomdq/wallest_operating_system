@@ -67,7 +67,7 @@ export default function HubPage() {
     : null;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12" style={{ background: '#0a0a0a' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 bg-wos-bg">
 
       {/* Header */}
       <div className="text-center mb-12">
@@ -80,14 +80,14 @@ export default function HubPage() {
           </div>
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+        <h1 className="text-4xl md:text-5xl font-bold text-wos-text mb-3">
           {displayName
             ? <>Bienvenido, <span style={{ color: '#F15A29' }}>{displayName}</span></>
             : 'Bienvenido'
           }
         </h1>
 
-        <p className="text-base" style={{ color: '#888' }}>
+        <p className="text-base text-wos-text-subtle">
           Selecciona el área de trabajo para continuar
         </p>
       </div>

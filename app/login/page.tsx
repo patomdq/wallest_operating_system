@@ -57,15 +57,14 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-4"
-      style={{ background: '#0a0a0a' }}
+      className="min-h-screen flex flex-col items-center justify-center px-4 bg-wos-bg"
     >
       <div className="w-full max-w-md space-y-4">
 
         {/* Logo — solo texto, sin ícono */}
         <div className="text-center mb-6">
-          <h1 className="text-5xl font-black text-white tracking-wider mb-1">WOS</h1>
-          <p className="text-sm" style={{ color: '#888' }}>
+          <h1 className="text-5xl font-black text-wos-text tracking-wider mb-1">WOS</h1>
+          <p className="text-sm text-wos-text-subtle">
             Wallest by Hasu Activos Inmobiliarios SL
           </p>
         </div>
@@ -73,21 +72,21 @@ export default function LoginPage() {
         {/* Form */}
         <div
           className="rounded-2xl p-8"
-          style={{ background: '#161616', border: '1px solid #252525' }}
+          style={{ background: 'var(--wos-card)', border: '1px solid var(--wos-border)' }}
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail size={18} color="#888" />
+                <Mail size={18} style={{ color: 'var(--wos-text-subtle)' }} />
               </div>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="block w-full pl-10 pr-3 py-3 rounded-xl text-white text-sm focus:outline-none"
-                style={{ background: '#0a0a0a', border: '1px solid #2a2a2a' }}
+                className="block w-full pl-10 pr-3 py-3 rounded-xl text-sm focus:outline-none"
+                style={{ background: 'var(--wos-bg)', border: '1px solid var(--wos-border)' }}
                 placeholder="Correo electrónico"
               />
             </div>
@@ -95,15 +94,15 @@ export default function LoginPage() {
             {/* Password */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock size={18} color="#888" />
+                <Lock size={18} style={{ color: 'var(--wos-text-subtle)' }} />
               </div>
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="block w-full pl-10 pr-10 py-3 rounded-xl text-white text-sm focus:outline-none"
-                style={{ background: '#0a0a0a', border: '1px solid #2a2a2a' }}
+                className="block w-full pl-10 pr-10 py-3 rounded-xl text-sm focus:outline-none"
+                style={{ background: 'var(--wos-bg)', border: '1px solid var(--wos-border)' }}
                 placeholder="Contraseña"
               />
               <button
@@ -111,7 +110,7 @@ export default function LoginPage() {
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <EyeOff size={18} color="#888" /> : <Eye size={18} color="#888" />}
+                {showPassword ? <EyeOff size={18} style={{ color: 'var(--wos-text-subtle)' }} /> : <Eye size={18} style={{ color: 'var(--wos-text-subtle)' }} />}
               </button>
             </div>
 
@@ -150,13 +149,13 @@ export default function LoginPage() {
                   className="rounded"
                   style={{ accentColor: '#F15A29' }}
                 />
-                <span style={{ color: '#888' }}>Recordarme</span>
+                <span className="text-wos-text-subtle">Recordarme</span>
               </label>
               <button
                 type="button"
-                style={{ color: '#888' }}
+                style={{ color: 'var(--wos-text-subtle)' }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#F15A29'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#888'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--wos-text-subtle)'}
                 onClick={() => alert('Para recuperar tu contraseña, contacta al administrador.\n\nEmail: patricio@wallest.pro')}
               >
                 ¿Olvidaste tu contraseña?
@@ -168,20 +167,20 @@ export default function LoginPage() {
         {/* Solicitar acceso */}
         <div
           className="rounded-2xl p-5 text-center"
-          style={{ background: '#161616', border: '1px solid #252525' }}
+          style={{ background: 'var(--wos-card)', border: '1px solid var(--wos-border)' }}
         >
-          <p className="text-sm mb-3" style={{ color: '#888' }}>¿No tienes una cuenta?</p>
+          <p className="text-sm mb-3 text-wos-text-subtle">¿No tienes una cuenta?</p>
           <button
             onClick={() => alert('Para crear una cuenta, contacta al administrador.\n\nEmail: patricio@wallest.pro')}
-            className="w-full py-2.5 px-4 text-sm font-medium rounded-xl border transition-all duration-200 text-white"
-            style={{ borderColor: '#333', background: 'transparent' }}
+            className="w-full py-2.5 px-4 text-sm font-medium rounded-xl border transition-all duration-200"
+            style={{ borderColor: 'var(--wos-border-light)', background: 'transparent', color: 'var(--wos-text)' }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.borderColor = '#F15A29';
               (e.currentTarget as HTMLElement).style.color = '#F15A29';
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = '#333';
-              (e.currentTarget as HTMLElement).style.color = '#ffffff';
+              (e.currentTarget as HTMLElement).style.borderColor = 'var(--wos-border-light)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--wos-text)';
             }}
           >
             Solicitar acceso
@@ -191,9 +190,9 @@ export default function LoginPage() {
         {/* Acceso Inversores */}
         <div className="text-center">
           <div className="flex items-center gap-3 mb-3">
-            <div className="flex-1 h-px" style={{ background: '#222' }} />
-            <span className="text-xs" style={{ color: '#555' }}>o</span>
-            <div className="flex-1 h-px" style={{ background: '#222' }} />
+            <div className="flex-1 h-px bg-wos-border" />
+            <span className="text-xs text-wos-text-subtle">o</span>
+            <div className="flex-1 h-px bg-wos-border" />
           </div>
           <button
             onClick={() => router.push('/inversores/login')}
@@ -214,7 +213,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs" style={{ color: '#333' }}>
+        <p className="text-center text-xs text-wos-text-subtle">
           Desarrollado por{' '}
           <span style={{ color: '#F15A29' }}>Berciamedia</span>{' '}
           para{' '}

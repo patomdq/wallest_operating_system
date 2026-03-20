@@ -106,8 +106,8 @@ export default function Sidebar() {
               <span className="text-white font-black text-sm">W</span>
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white">WOS 2.0</h1>
-              <p className="text-[10px] tracking-wide" style={{ color: '#666' }}>
+              <h1 className="text-sm font-bold text-wos-text">WOS 2.0</h1>
+              <p className="text-[10px] tracking-wide text-wos-text-subtle">
                 Wallest by Hasu
               </p>
             </div>
@@ -146,11 +146,11 @@ export default function Sidebar() {
                 <div
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-150 cursor-pointer"
                   style={{
-                    background: isActive(item.path) && isDashboard ? '#1e1e1e' : 'transparent',
+                    background: isActive(item.path) && isDashboard ? 'var(--wos-card-hover)' : 'transparent',
                   }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#1a1a1a'}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--wos-card-hover)'}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background =
-                    isActive(item.path) && isDashboard ? '#1e1e1e' : 'transparent'}
+                    isActive(item.path) && isDashboard ? 'var(--wos-card-hover)' : 'transparent'}
                   onClick={() => {
                     router.push(item.path);
                     if (item.subItems) toggleMenu(item.title);
@@ -159,18 +159,18 @@ export default function Sidebar() {
                   <div className="flex items-center gap-2.5 flex-1">
                     <item.icon
                       size={16}
-                      style={{ color: isAreaActive ? accent : '#ffffff' }}
+                      style={{ color: isAreaActive ? accent : 'var(--wos-text)' }}
                       className="flex-shrink-0"
                     />
                     <span
                       className="text-[13px] font-medium"
-                      style={{ color: isAreaActive ? accent : '#ffffff' }}
+                      style={{ color: isAreaActive ? accent : 'var(--wos-text)' }}
                     >
                       {item.title}
                     </span>
                   </div>
                   {item.subItems && (
-                    <span style={{ color: '#555' }}>
+                    <span style={{ color: 'var(--wos-text-subtle)' }}>
                       {isAreaOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                     </span>
                   )}
@@ -178,7 +178,7 @@ export default function Sidebar() {
 
                 {/* Subitems */}
                 {item.subItems && isAreaOpen && (
-                  <div className="ml-3 mt-0.5 mb-1 border-l pl-3 space-y-0.5" style={{ borderColor: '#222' }}>
+                  <div className="ml-3 mt-0.5 mb-1 border-l pl-3 space-y-0.5" style={{ borderColor: 'var(--wos-border)' }}>
                     {item.subItems.map((sub) => {
                       const subActive = isActive(sub.path);
                       return (
@@ -187,12 +187,12 @@ export default function Sidebar() {
                           href={sub.path}
                           className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12px] transition-all duration-150"
                           style={{
-                            color: subActive ? accent : '#ffffff',
-                            background: subActive ? '#1e1e1e' : 'transparent',
+                            color: subActive ? accent : 'var(--wos-text)',
+                            background: subActive ? 'var(--wos-card-hover)' : 'transparent',
                             borderLeft: subActive ? `2px solid ${accent}` : '2px solid transparent',
                           }}
                           onMouseEnter={e => {
-                            if (!subActive) (e.currentTarget as HTMLElement).style.background = '#1a1a1a';
+                            if (!subActive) (e.currentTarget as HTMLElement).style.background = 'var(--wos-card-hover)';
                           }}
                           onMouseLeave={e => {
                             if (!subActive) (e.currentTarget as HTMLElement).style.background = 'transparent';
@@ -200,7 +200,7 @@ export default function Sidebar() {
                         >
                           <sub.icon
                             size={13}
-                            style={{ color: subActive ? accent : '#ffffff' }}
+                            style={{ color: subActive ? accent : 'var(--wos-text)' }}
                             className="flex-shrink-0"
                           />
                           <span>{sub.title}</span>
@@ -216,7 +216,7 @@ export default function Sidebar() {
 
         {/* Footer */}
         <div className="px-4 py-3 border-t border-wos-border">
-          <p className="text-[10px] text-center tracking-widest uppercase" style={{ color: '#333' }}>v2.0</p>
+          <p className="text-[10px] text-center tracking-widest uppercase text-wos-text-subtle">v2.0</p>
         </div>
       </div>
     </aside>

@@ -515,17 +515,17 @@ export default function AdministracionPage() {
         >
           <div
             className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6"
-            style={{ background: '#161616', border: '1px solid #252525' }}
+            style={{ background: 'var(--wos-card)', border: '1px solid var(--wos-border)' }}
           >
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-lg font-semibold text-white">
+            <h3 className="text-lg font-semibold text-wos-text">
               {editingId ? 'Editar Movimiento' : 'Nuevo Movimiento'}
             </h3>
             <button
               type="button"
               onClick={resetForm}
               className="text-sm px-3 py-1 rounded-lg"
-              style={{ color: '#888', background: '#222' }}
+              style={{ color: 'var(--wos-text-subtle)', background: 'var(--wos-border)' }}
             >✕</button>
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -310,9 +310,9 @@ export default function FinanzasConsolidadas() {
             onClick={() => setFiltroTipo(tipo)}
             className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
             style={{
-              background: filtroTipo === tipo ? '#F15A29' : '#161616',
-              color: filtroTipo === tipo ? '#ffffff' : '#888',
-              border: `1px solid ${filtroTipo === tipo ? '#F15A29' : '#252525'}`,
+              background: filtroTipo === tipo ? '#F15A29' : 'var(--wos-card)',
+              color: filtroTipo === tipo ? '#ffffff' : 'var(--wos-text-subtle)',
+              border: `1px solid ${filtroTipo === tipo ? '#F15A29' : 'var(--wos-border)'}`,
             }}
           >
             {tipo === 'TODOS' ? 'Todos' : tipo === 'HASU' ? 'HASU (100%)' : 'JV con Socios'}

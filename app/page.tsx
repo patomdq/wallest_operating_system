@@ -43,10 +43,10 @@ function KpiCard({ label, value, sub, icon: Icon, iconColor }: {
   return (
     <div
       className="rounded-xl p-5 flex flex-col gap-3"
-      style={{ background: '#161616', border: '1px solid #222' }}
+      style={{ background: 'var(--wos-card)', border: '1px solid var(--wos-border)' }}
     >
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#666' }}>
+        <p className="text-xs font-semibold uppercase tracking-widest text-wos-text-subtle">
           {label}
         </p>
         <div
@@ -57,8 +57,8 @@ function KpiCard({ label, value, sub, icon: Icon, iconColor }: {
         </div>
       </div>
       <div>
-        <p className="text-2xl font-bold text-white leading-none">{value}</p>
-        {sub && <p className="text-xs mt-1" style={{ color: '#666' }}>{sub}</p>}
+        <p className="text-2xl font-bold text-wos-text leading-none">{value}</p>
+        {sub && <p className="text-xs mt-1 text-wos-text-subtle">{sub}</p>}
       </div>
     </div>
   );
@@ -70,7 +70,7 @@ function AreaCard({ title, color, icon: Icon, href, children }: {
   return (
     <div
       className="rounded-xl overflow-hidden"
-      style={{ background: '#161616', border: `1px solid ${color}30` }}
+      style={{ background: 'var(--wos-card)', border: `1px solid ${color}30` }}
     >
       {/* Top accent */}
       <div className="h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}00)` }} />
@@ -84,7 +84,7 @@ function AreaCard({ title, color, icon: Icon, href, children }: {
             >
               <Icon size={16} style={{ color }} />
             </div>
-            <h3 className="text-sm font-bold text-white">{title}</h3>
+            <h3 className="text-sm font-bold text-wos-text">{title}</h3>
           </div>
           <Link
             href={href}
@@ -104,9 +104,9 @@ function AreaCard({ title, color, icon: Icon, href, children }: {
 
 function AreaRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
-    <div className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid #1e1e1e' }}>
-      <span className="text-xs" style={{ color: '#888' }}>{label}</span>
-      <span className="text-sm font-semibold" style={{ color: valueColor || '#ffffff' }}>{value}</span>
+    <div className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid var(--wos-border)' }}>
+      <span className="text-xs text-wos-text-subtle">{label}</span>
+      <span className="text-sm font-semibold" style={{ color: valueColor || 'var(--wos-text)' }}>{value}</span>
     </div>
   );
 }
@@ -222,22 +222,22 @@ export default function DashboardGeneral() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0a' }}>
+      <div className="min-h-screen flex items-center justify-center bg-wos-bg">
         <div className="flex items-center gap-3">
           <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#F15A29] border-t-transparent" />
-          <span className="text-sm" style={{ color: '#666' }}>Cargando dashboard...</span>
+          <span className="text-sm text-wos-text-subtle">Cargando dashboard...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#0a0a0a' }}>
+    <div className="min-h-screen bg-wos-bg">
 
       {/* ── Page header ─────────────────────────────── */}
-      <div className="px-6 py-6 border-b" style={{ borderColor: '#161616' }}>
-        <h1 className="text-2xl font-bold text-white mb-1">Dashboard General</h1>
-        <p className="text-sm" style={{ color: '#666' }}>
+      <div className="px-6 py-6 border-b border-wos-border">
+        <h1 className="text-2xl font-bold text-wos-text mb-1">Dashboard General</h1>
+        <p className="text-sm text-wos-text-subtle">
           Resumen integral de operaciones, rentabilidad y rendimiento
         </p>
       </div>
@@ -302,20 +302,20 @@ export default function DashboardGeneral() {
 
         {/* ── Gráficos ─────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-xl p-5" style={{ background: '#161616', border: '1px solid #222' }}>
+          <div className="rounded-xl p-5" style={{ background: 'var(--wos-card)', border: '1px solid var(--wos-border)' }}>
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 size={16} style={{ color: '#F15A29' }} />
-              <h3 className="text-sm font-semibold text-white">Evolución Mensual</h3>
+              <h3 className="text-sm font-semibold text-wos-text">Evolución Mensual</h3>
             </div>
             <div className="overflow-x-auto">
               <LineChart data={data.evolucionMensual} height={220} />
             </div>
           </div>
 
-          <div className="rounded-xl p-5" style={{ background: '#161616', border: '1px solid #222' }}>
+          <div className="rounded-xl p-5" style={{ background: 'var(--wos-card)', border: '1px solid var(--wos-border)' }}>
             <div className="flex items-center gap-2 mb-4">
               <PieChart size={16} style={{ color: '#F15A29' }} />
-              <h3 className="text-sm font-semibold text-white">Distribución del Capital</h3>
+              <h3 className="text-sm font-semibold text-wos-text">Distribución del Capital</h3>
             </div>
             <div className="overflow-x-auto">
               <DonutChart data={data.distribucionCapital} height={220} />
@@ -324,8 +324,8 @@ export default function DashboardGeneral() {
         </div>
 
         {/* ── Acciones rápidas ─────────────────────────── */}
-        <div className="rounded-xl p-5" style={{ background: '#161616', border: '1px solid #222' }}>
-          <h3 className="text-sm font-semibold text-white mb-4">Acciones Rápidas</h3>
+        <div className="rounded-xl p-5" style={{ background: 'var(--wos-card)', border: '1px solid var(--wos-border)' }}>
+          <h3 className="text-sm font-semibold text-wos-text mb-4">Acciones Rápidas</h3>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {[
               { href: '/wallest/activos',      icon: Home,       label: 'Activos',      color: '#F15A29' },
@@ -339,9 +339,9 @@ export default function DashboardGeneral() {
                 key={href}
                 href={href}
                 className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-150"
-                style={{ background: '#111' }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#1e1e1e'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#111'}
+                style={{ background: 'var(--wos-sidebar)' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--wos-card-hover)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--wos-sidebar)'}
               >
                 <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center"
@@ -349,7 +349,7 @@ export default function DashboardGeneral() {
                 >
                   <Icon size={18} style={{ color }} />
                 </div>
-                <span className="text-xs text-white font-medium text-center">{label}</span>
+                <span className="text-xs text-wos-text font-medium text-center">{label}</span>
               </Link>
             ))}
           </div>
