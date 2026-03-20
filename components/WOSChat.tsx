@@ -14,6 +14,7 @@ function stripActionJson(text: string): string {
     // Líneas de etiquetas de contexto (MOVIMIENTOS: [...], SALDO_ACTUAL: [...], etc.)
     .replace(/^(MOVIMIENTOS|SALDO_ACTUAL|SALDO_POR_CUENTA|INMUEBLES|REFORMAS|PARTIDAS|ITEMS|EVENTOS|TAREAS|LEADS|PROVEEDORES|MATERIALES|COMERCIALIZACION|TRANSACCIONES|FECHA_HOY):.+$/gm, '')
     // Marcadores internos
+    .replace(/\s*⟦lista:[\s\S]*?⟧/g, '')
     .replace(/\s*⟪pending:[\s\S]*?⟫/g, '')
     .replace(/\s*⟨id:[^⟩]+⟩/g, '')
     .replace(/\s*\[id:[^\]]+\]/g, '')

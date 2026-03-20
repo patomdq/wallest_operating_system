@@ -615,33 +615,64 @@ export async function POST(request: NextRequest) {
 
     console.log('[CHAT] message:', message);
 
-    // 1. Interceptar selección numérica de lista (ej: "el 1", "elimina el 2", "3")
+    // 1a. Interceptar selección numérica de ⟦lista:...⟧ generada por el servidor
     const numberMatch = message.trim().match(/^(?:elimin[ao]r?\s+)?(?:el\s+)?(\d+)\s*[.!]?$/i);
-    console.log('[CHAT] numberMatch:', numberMatch, '| historial:', conversationHistory.length);
     if (numberMatch && conversationHistory.length > 0) {
       const n = parseInt(numberMatch[1]);
       const lastAssistant = [...conversationHistory].reverse().find((m: { role: string }) => m.role === 'assistant');
-      console.log('[CHAT] lastAssistant snippet:', lastAssistant?.content?.slice(0, 400));
       if (lastAssistant) {
-        // Intentar múltiples formatos de brackets que el modelo puede usar
-        const idPatterns = [
-          new RegExp(`${n}\\..*?⟨id:([^⟩\n]+)⟩`),          // ⟨⟩ Mathematical
-          new RegExp(`${n}\\..*?<id:([^>\n]+)>`),             // <>
-          new RegExp(`${n}\\..*?\\[id:([^\\]\n]+)\\]`),       // []
-          new RegExp(`${n}\\..*?\\(id:([^)\n]+)\\)`),         // ()
-          new RegExp(`${n}\\..*?id:\\s*([a-f0-9-]{36})`),     // "id: UUID" sin brackets
-        ];
-        let idMatch: RegExpMatchArray | null = null;
-        for (const pat of idPatterns) {
-          idMatch = lastAssistant.content.match(pat);
-          if (idMatch) { console.log('[CHAT] idPattern matched:', pat.toString(), '→', idMatch[1]); break; }
+        const listaMatch = lastAssistant.content.match(/⟦lista:([\s\S]*?)⟧/);
+        if (listaMatch) {
+          try {
+            const lista: Array<{ n: number; id: string }> = JSON.parse(listaMatch[1]);
+            const item = lista.find(x => x.n === n);
+            console.log('[CHAT] selección de lista estructurada → n:', n, 'id:', item?.id);
+            if (item) {
+              const result = await handleAction('delete_movimiento', { movimiento_id: item.id }, message);
+              return NextResponse.json({ response: result, success: true });
+            }
+          } catch { /* JSON inválido */ }
         }
-        if (idMatch) {
-          const result = await handleAction('delete_movimiento', { movimiento_id: idMatch[1].trim() }, message);
-          return NextResponse.json({ response: result, success: true });
-        }
-        console.log('[CHAT] no se encontró id en el mensaje anterior para el número', n);
       }
+    }
+
+    // 1b. Interceptar intent de eliminar movimiento → búsqueda y lista server-side
+    const deleteIntent = /\b(elimin[ao]r?|borr[ao]r?|quitar|suprim[ei]r?)\b/i.test(message) &&
+      /\b(movimiento|gasto|pago|ingreso|cobro|factura|transferencia)\b/i.test(message);
+    if (deleteIntent) {
+      const stopwords = /\b(elimin[ao]r?|borr[ao]r?|quitar|suprim[ei]r?|el|la|los|las|un|una|de|del|movimiento|gasto|pago|ingreso|cobro|este|ese|ese)\b/gi;
+      const keywords = message.replace(stopwords, ' ').split(/\s+/).filter(k => k.length > 2);
+      console.log('[CHAT] deleteIntent keywords:', keywords);
+
+      const { data: movimientos } = await supabase
+        .from('movimientos_empresa')
+        .select('id, fecha, concepto, monto, proveedor, cuenta')
+        .order('fecha', { ascending: false })
+        .limit(200);
+
+      const matches = (movimientos || []).filter(m => {
+        const texto = `${m.concepto || ''} ${m.proveedor || ''}`.toLowerCase();
+        return keywords.length > 0 && keywords.some(k => texto.includes(k.toLowerCase()));
+      });
+
+      console.log('[CHAT] matches encontrados:', matches.length, matches.map(m => ({ id: m.id, concepto: m.concepto })));
+
+      if (matches.length === 1) {
+        const mov = matches[0];
+        const pending = JSON.stringify({ action: 'delete_movimiento', data: { movimiento_id: mov.id } });
+        const resp = `Encontré este movimiento:\n- ${mov.fecha} — ${mov.concepto} — ${Math.abs(mov.monto)}€ (${mov.cuenta})\n\n¿Lo elimino? ⟪pending:${pending}⟫`;
+        return NextResponse.json({ response: resp, success: true });
+      }
+
+      if (matches.length > 1) {
+        const lista = matches.map((mov, i) => ({ n: i + 1, id: mov.id }));
+        const display = matches.map((mov, i) =>
+          `${i + 1}. ${mov.fecha} — ${mov.concepto} — ${Math.abs(mov.monto)}€`
+        ).join('\n');
+        const resp = `Encontré ${matches.length} movimientos:\n${display}\n\n¿Cuál querés eliminar?⟦lista:${JSON.stringify(lista)}⟧`;
+        return NextResponse.json({ response: resp, success: true });
+      }
+      // 0 matches → cae al flujo normal del modelo
     }
 
     // 2. Interceptar confirmación de acción pendiente (⟪pending:...⟫)
