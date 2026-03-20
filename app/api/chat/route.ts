@@ -589,8 +589,14 @@ if (action === 'delete_evento') {
   }
 
   if (action === 'delete_movimiento') {
-    const { error } = await supabase.from('movimientos_empresa').delete().eq('id', data.movimiento_id);
-    if (error) return `Error al eliminar el movimiento: ${error.message}`;
+    console.log('[DELETE_MOV] movimiento_id recibido:', data.movimiento_id, '| tipo:', typeof data.movimiento_id);
+    const { error, count } = await supabase
+      .from('movimientos_empresa')
+      .delete({ count: 'exact' })
+      .eq('id', data.movimiento_id);
+    console.log('[DELETE_MOV] resultado → error:', error, '| filas afectadas:', count);
+    if (error) return `Error al eliminar el movimiento: ${error.message} (código: ${error.code})`;
+    if (count === 0) return `No se encontró ningún movimiento con ese ID. Puede que ya haya sido eliminado.`;
     return `Movimiento eliminado correctamente.`;
   }
 
