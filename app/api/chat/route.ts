@@ -620,18 +620,24 @@ export async function POST(request: NextRequest) {
     if (numberMatch && conversationHistory.length > 0) {
       const n = parseInt(numberMatch[1]);
       const lastAssistant = [...conversationHistory].reverse().find((m: { role: string }) => m.role === 'assistant');
+      console.log('[LISTA] numberMatch n:', n, '| lastAssistant existe:', !!lastAssistant);
       if (lastAssistant) {
-        const listaMatch = lastAssistant.content.match(/⟦lista:([\s\S]*?)⟧/);
+        console.log('[LISTA] content (JSON):', JSON.stringify(lastAssistant.content.slice(0, 600)));
+        // Intentar con literal y con Unicode escape (U+27E6 / U+27E7)
+        const listaMatch =
+          lastAssistant.content.match(/⟦lista:([\s\S]*?)⟧/) ||
+          lastAssistant.content.match(/\u27E6lista:([\s\S]*?)\u27E7/);
+        console.log('[LISTA] listaMatch:', listaMatch ? listaMatch[1].slice(0, 100) : null);
         if (listaMatch) {
           try {
             const lista: Array<{ n: number; id: string }> = JSON.parse(listaMatch[1]);
             const item = lista.find(x => x.n === n);
-            console.log('[CHAT] selección de lista estructurada → n:', n, 'id:', item?.id);
+            console.log('[LISTA] item encontrado:', item);
             if (item) {
               const result = await handleAction('delete_movimiento', { movimiento_id: item.id }, message);
               return NextResponse.json({ response: result, success: true });
             }
-          } catch { /* JSON inválido */ }
+          } catch (e) { console.log('[LISTA] error parseando JSON de lista:', e); }
         }
       }
     }
