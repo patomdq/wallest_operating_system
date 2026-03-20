@@ -69,7 +69,7 @@ export default function WOSChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          conversationHistory: newMessages.slice(-10),
+          conversationHistory: newMessages.slice(-10).map(({ role, content }) => ({ role, content })),
           sessionId
         }),
       });
