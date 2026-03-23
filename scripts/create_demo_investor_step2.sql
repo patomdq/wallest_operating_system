@@ -34,7 +34,7 @@ INSERT INTO inmuebles (
 -- ── Reforma (nombre = nombre del inmueble — el portal hace match por nombre) ─
 INSERT INTO reformas (
   id, inmueble_id, nombre, etapa,
-  presupuesto_total, avance, estado,
+  presupuesto, avance, estado,
   fecha_inicio, fecha_fin, created_at, updated_at
 ) VALUES (
   v_reforma_id, v_inmueble_id,
