@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { DemoProvider } from '@/contexts/DemoContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
 
 export const metadata: Metadata = {
@@ -28,11 +29,13 @@ export default function RootLayout({
       </head>
       <body className="bg-wos-bg text-wos-text">
         <ThemeProvider>
-          <SidebarProvider>
-            <LayoutWrapper>
-              {children}
-            </LayoutWrapper>
-          </SidebarProvider>
+          <DemoProvider>
+            <SidebarProvider>
+              <LayoutWrapper>
+                {children}
+              </LayoutWrapper>
+            </SidebarProvider>
+          </DemoProvider>
         </ThemeProvider>
       </body>
     </html>

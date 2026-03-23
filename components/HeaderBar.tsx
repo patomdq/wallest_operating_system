@@ -1,8 +1,9 @@
 'use client';
 
-import { Menu, LogOut, Sun, Moon } from 'lucide-react';
+import { Menu, LogOut, Sun, Moon, FlaskConical } from 'lucide-react';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useDemo } from '@/contexts/DemoContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect } from 'react';
@@ -49,6 +50,7 @@ function getPageInfo(pathname: string) {
 export default function HeaderBar() {
   const { toggleSidebar } = useSidebar();
   const { theme, toggleTheme } = useTheme();
+  const { isDemoMode, toggleDemo } = useDemo();
   const pathname = usePathname();
   const router = useRouter();
   const { title, subtitle, area } = getPageInfo(pathname);
@@ -103,6 +105,32 @@ export default function HeaderBar() {
 
       {/* Derecha */}
       <div className="flex items-center gap-2 flex-shrink-0">
+
+        {/* Demo mode badge (visible siempre cuando activo) */}
+        {isDemoMode && (
+          <span
+            className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider animate-pulse"
+            style={{ background: '#E85D04', color: '#ffffff' }}
+          >
+            <FlaskConical size={10} />
+            DEMO MODE
+          </span>
+        )}
+
+        {/* Toggle Demo */}
+        <button
+          onClick={toggleDemo}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all"
+          style={isDemoMode
+            ? { background: '#E85D04', color: '#ffffff' }
+            : { background: 'var(--wos-card-hover)', color: 'var(--wos-text-muted)' }
+          }
+          title={isDemoMode ? 'Desactivar Demo Mode' : 'Activar Demo Mode — Edificio Nexo'}
+        >
+          <FlaskConical size={13} />
+          Demo
+        </button>
+
         <CambiarEntornoButton />
 
         {/* Toggle claro/oscuro */}

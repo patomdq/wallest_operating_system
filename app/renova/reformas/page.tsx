@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { supabase, Reforma } from '@/lib/supabase';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import Link from 'next/link';
+import { useDemo, demoData } from '@/contexts/DemoContext';
 
 export default function ReformasPage() {
+  const { isDemoMode } = useDemo();
   const [reformas, setReformas] = useState<any[]>([]);
   const [inmuebles, setInmuebles] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -43,9 +45,15 @@ export default function ReformasPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [isDemoMode]);
 
   const loadData = async () => {
+    if (isDemoMode) {
+      setReformas(demoData.reformas);
+      setInmuebles(demoData.inmuebles);
+      return;
+    }
+
     const { data: ref } = await supabase
       .from('reformas')
       .select('*, inmuebles(nombre, ciudad)')
