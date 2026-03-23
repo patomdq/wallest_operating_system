@@ -146,11 +146,11 @@ export default function Sidebar() {
                 <div
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-150 cursor-pointer"
                   style={{
-                    background: isActive(item.path) && isDashboard ? 'var(--wos-card-hover)' : 'transparent',
+                    background: isActive(item.path) && isDashboard ? 'var(--wos-nav-hover)' : 'transparent',
                   }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--wos-card-hover)'}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--wos-nav-hover)'}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background =
-                    isActive(item.path) && isDashboard ? 'var(--wos-card-hover)' : 'transparent'}
+                    isActive(item.path) && isDashboard ? 'var(--wos-nav-hover)' : 'transparent'}
                   onClick={() => {
                     router.push(item.path);
                     if (item.subItems) toggleMenu(item.title);
@@ -188,11 +188,11 @@ export default function Sidebar() {
                           className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12px] transition-all duration-150"
                           style={{
                             color: subActive ? accent : 'var(--wos-text)',
-                            background: subActive ? 'var(--wos-card-hover)' : 'transparent',
+                            background: subActive ? 'var(--wos-nav-hover)' : 'transparent',
                             borderLeft: subActive ? `2px solid ${accent}` : '2px solid transparent',
                           }}
                           onMouseEnter={e => {
-                            if (!subActive) (e.currentTarget as HTMLElement).style.background = 'var(--wos-card-hover)';
+                            if (!subActive) (e.currentTarget as HTMLElement).style.background = 'var(--wos-nav-hover)';
                           }}
                           onMouseLeave={e => {
                             if (!subActive) (e.currentTarget as HTMLElement).style.background = 'transparent';

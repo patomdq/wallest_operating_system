@@ -489,13 +489,17 @@ export default function AdministracionPage() {
             key={cuenta}
             className="bg-wos-card border border-wos-border rounded-lg p-6 cursor-pointer hover:border-wos-accent transition-colors"
             onClick={() => setFiltroCuenta(filtroCuenta === cuenta ? '' : cuenta)}
-            style={{ borderColor: filtroCuenta === cuenta ? '#c9a84c' : undefined }}
+            style={{
+              borderColor: filtroCuenta === cuenta ? '#c9a84c' : undefined,
+              borderLeftColor: '#F15A29',
+              borderLeftWidth: '4px',
+            }}
           >
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-wos-text-muted truncate pr-2">{cuenta}</p>
               <Wallet className="text-wos-accent flex-shrink-0" size={20} />
             </div>
-            <p className={`text-3xl font-bold ${saldo >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <p className={`text-4xl font-bold ${saldo >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {saldo.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
             </p>
             <p className="text-xs text-wos-text-muted mt-2">Saldo actual</p>
