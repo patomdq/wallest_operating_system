@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { supabase, Comercializacion } from '@/lib/supabase';
 import { Plus, Trash2, Globe, TrendingDown, DollarSign } from 'lucide-react';
+import { useDemo, demoData } from '@/contexts/DemoContext';
 
 export default function ComercializacionPage() {
+  const { isDemoMode } = useDemo();
   const [items, setItems] = useState<any[]>([]);
   const [inmuebles, setInmuebles] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -22,9 +24,13 @@ export default function ComercializacionPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [isDemoMode]);
 
   const loadData = async () => {
+    if (isDemoMode) {
+      setItems(demoData.comercializacion);
+      return;
+    }
     const { data: com } = await supabase
       .from('comercializacion')
       .select('*, inmuebles(nombre, ciudad, tipo, precio_venta)')

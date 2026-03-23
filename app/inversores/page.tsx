@@ -227,21 +227,21 @@ function OperacionCard({ op, expanded, onToggle }: { op: Operacion; expanded: bo
             {[
               {
                 label: 'Escenario Conservador',
-                precioVenta: 90000,
+                precioVenta: op.valor_estimado_venta - 20000,
                 color: '#ef4444',
                 borderColor: '#ef444430',
                 bgColor: '#1a0a0a',
               },
               {
                 label: 'Escenario Realista',
-                precioVenta: 100000,
+                precioVenta: op.valor_estimado_venta,
                 color: '#c9a84c',
                 borderColor: '#c9a84c30',
                 bgColor: '#111008',
               },
               {
                 label: 'Escenario Optimista',
-                precioVenta: 110000,
+                precioVenta: op.valor_estimado_venta + 20000,
                 color: '#4ade80',
                 borderColor: '#4ade8030',
                 bgColor: '#0a1a0e',
