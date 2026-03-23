@@ -490,9 +490,10 @@ export default function AdministracionPage() {
             className="bg-wos-card border border-wos-border rounded-lg p-6 cursor-pointer hover:border-wos-accent transition-colors"
             onClick={() => setFiltroCuenta(filtroCuenta === cuenta ? '' : cuenta)}
             style={{
+              borderLeft: '3px solid #E85D04',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
               borderColor: filtroCuenta === cuenta ? '#c9a84c' : undefined,
-              borderLeftColor: '#F15A29',
-              borderLeftWidth: '4px',
+              borderLeftColor: '#E85D04',
             }}
           >
             <div className="flex items-center justify-between mb-2">
@@ -770,11 +771,12 @@ export default function AdministracionPage() {
                       {new Date(mov.fecha).toLocaleDateString('es-ES')}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        mov.tipo === 'Ingreso' 
-                          ? 'bg-green-500/20 text-green-500' 
-                          : 'bg-red-500/20 text-red-500'
-                      }`}>
+                      <span
+                        className="px-2 py-1 rounded-full text-xs font-medium"
+                        style={mov.tipo === 'Ingreso'
+                          ? { background: '#dcfce7', color: '#15803d' }
+                          : { background: '#fee2e2', color: '#b91c1c' }}
+                      >
                         {mov.tipo}
                       </span>
                     </td>

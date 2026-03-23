@@ -90,14 +90,15 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`bg-wos-sidebar border-r border-wos-border flex flex-col h-screen overflow-hidden sidebar-transition z-50 ${
+      className={`flex flex-col h-screen overflow-hidden sidebar-transition z-50 ${
         isOpen ? 'w-64 md:w-64 fixed md:relative' : 'w-0 md:w-0'
       } md:static`}
+      style={{ background: '#1a1a1a', borderRight: '1px solid #2a2a2a' }}
     >
       <div className={`${isOpen ? 'opacity-100 block' : 'opacity-0 hidden'} transition-opacity duration-300 flex flex-col h-full overflow-y-auto w-64`}>
 
         {/* ── Header ─────────────────────────────────── */}
-        <div className="px-5 py-5 border-b border-wos-border">
+        <div className="px-5 py-5" style={{ borderBottom: '1px solid #2a2a2a' }}>
           <div className="flex items-center gap-3">
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -106,8 +107,8 @@ export default function Sidebar() {
               <span className="text-white font-black text-sm">W</span>
             </div>
             <div>
-              <h1 className="text-sm font-bold text-wos-text">WOS 2.0</h1>
-              <p className="text-[10px] tracking-wide text-wos-text-subtle">
+              <h1 className="text-sm font-bold" style={{ color: '#ffffff' }}>WOS 2.0</h1>
+              <p className="text-[10px] tracking-wide" style={{ color: '#888888' }}>
                 Wallest by Hasu
               </p>
             </div>
@@ -146,11 +147,14 @@ export default function Sidebar() {
                 <div
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-150 cursor-pointer"
                   style={{
-                    background: isActive(item.path) && isDashboard ? 'var(--wos-nav-hover)' : 'transparent',
+                    background: isActive(item.path) && isDashboard ? '#E85D04' : 'transparent',
                   }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--wos-nav-hover)'}
+                  onMouseEnter={e => {
+                    const el = e.currentTarget as HTMLElement;
+                    if (!(isActive(item.path) && isDashboard)) el.style.background = '#252525';
+                  }}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background =
-                    isActive(item.path) && isDashboard ? 'var(--wos-nav-hover)' : 'transparent'}
+                    isActive(item.path) && isDashboard ? '#E85D04' : 'transparent'}
                   onClick={() => {
                     router.push(item.path);
                     if (item.subItems) toggleMenu(item.title);
@@ -159,18 +163,18 @@ export default function Sidebar() {
                   <div className="flex items-center gap-2.5 flex-1">
                     <item.icon
                       size={16}
-                      style={{ color: isAreaActive ? accent : 'var(--wos-text)' }}
+                      style={{ color: isAreaActive ? '#E85D04' : '#aaaaaa' }}
                       className="flex-shrink-0"
                     />
                     <span
                       className="text-[13px] font-medium"
-                      style={{ color: isAreaActive ? accent : 'var(--wos-text)' }}
+                      style={{ color: isAreaActive ? '#ffffff' : '#cccccc' }}
                     >
                       {item.title}
                     </span>
                   </div>
                   {item.subItems && (
-                    <span style={{ color: 'var(--wos-text-subtle)' }}>
+                    <span style={{ color: '#666666' }}>
                       {isAreaOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                     </span>
                   )}
@@ -178,7 +182,7 @@ export default function Sidebar() {
 
                 {/* Subitems */}
                 {item.subItems && isAreaOpen && (
-                  <div className="ml-3 mt-0.5 mb-1 border-l pl-3 space-y-0.5" style={{ borderColor: 'var(--wos-border)' }}>
+                  <div className="ml-3 mt-0.5 mb-1 border-l pl-3 space-y-0.5" style={{ borderColor: '#2a2a2a' }}>
                     {item.subItems.map((sub) => {
                       const subActive = isActive(sub.path);
                       return (
@@ -187,12 +191,12 @@ export default function Sidebar() {
                           href={sub.path}
                           className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12px] transition-all duration-150"
                           style={{
-                            color: subActive ? accent : 'var(--wos-text)',
-                            background: subActive ? 'var(--wos-nav-hover)' : 'transparent',
-                            borderLeft: subActive ? `2px solid ${accent}` : '2px solid transparent',
+                            color: subActive ? '#ffffff' : '#aaaaaa',
+                            background: subActive ? '#E85D04' : 'transparent',
+                            borderLeft: subActive ? '2px solid #E85D04' : '2px solid transparent',
                           }}
                           onMouseEnter={e => {
-                            if (!subActive) (e.currentTarget as HTMLElement).style.background = 'var(--wos-nav-hover)';
+                            if (!subActive) (e.currentTarget as HTMLElement).style.background = '#252525';
                           }}
                           onMouseLeave={e => {
                             if (!subActive) (e.currentTarget as HTMLElement).style.background = 'transparent';
@@ -200,7 +204,7 @@ export default function Sidebar() {
                         >
                           <sub.icon
                             size={13}
-                            style={{ color: subActive ? accent : 'var(--wos-text)' }}
+                            style={{ color: subActive ? '#ffffff' : '#888888' }}
                             className="flex-shrink-0"
                           />
                           <span>{sub.title}</span>
@@ -215,8 +219,8 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="px-4 py-3 border-t border-wos-border">
-          <p className="text-[10px] text-center tracking-widest uppercase text-wos-text-subtle">v2.0</p>
+        <div className="px-4 py-3" style={{ borderTop: '1px solid #2a2a2a' }}>
+          <p className="text-[10px] text-center tracking-widest uppercase" style={{ color: '#555555' }}>v2.0</p>
         </div>
       </div>
     </aside>
