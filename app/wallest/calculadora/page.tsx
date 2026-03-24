@@ -23,7 +23,6 @@ const CONCEPTOS_GASTOS = [
 ];
 
 export default function CalculadoraRentabilidad() {
-  const { isDemoMode } = useDemo();
   // Datos del proyecto
   const [nombre, setNombre] = useState('');
   const [ciudad, setCiudad] = useState('');
@@ -77,48 +76,9 @@ export default function CalculadoraRentabilidad() {
     rentabilidadAnualizadaOptimista: 0,
   });
 
-  // Demo mode: precargar datos Edificio Nexo
-  useEffect(() => {
-    if (isDemoMode) {
-      const d = demoData.calculadora;
-      setNombre(d.nombre);
-      setCiudad(d.ciudad);
-      setBarrio(d.barrio);
-      setProvincia(d.provincia);
-      setDireccion(d.direccion);
-      setEstado(d.estado);
-      setCalificacion(d.calificacion);
-      setDuracionMeses(d.duracion_meses);
-      setObservaciones(d.observaciones);
-      setTipoInmueble(d.tipo_inmueble);
-      setUrl(d.url);
-      setPrecioVentaPesimista(d.precio_venta_pesimista);
-      setPrecioVentaRealista(d.precio_venta_realista);
-      setPrecioVentaOptimista(d.precio_venta_optimista);
-      setProyectosGuardados([d as unknown as ProyectoRentabilidad]);
-      const g: Record<string, { estimado: number; real: number }> = {};
-      CONCEPTOS_GASTOS.forEach(c => {
-        g[c.id] = {
-          estimado: (d as any)[`${c.id}_estimado`] || 0,
-          real:     (d as any)[`${c.id}_real`]     || 0,
-        };
-      });
-      setGastos(g);
-    } else {
-      // Reset al salir de demo
-      setNombre(''); setCiudad(''); setBarrio(''); setProvincia('');
-      setDireccion(''); setEstado('borrador'); setCalificacion(0);
-      setDuracionMeses(12); setObservaciones(''); setTipoInmueble(''); setUrl('');
-      setPrecioVentaPesimista(0); setPrecioVentaRealista(0); setPrecioVentaOptimista(0);
-      const g: Record<string, { estimado: number; real: number }> = {};
-      CONCEPTOS_GASTOS.forEach(c => { g[c.id] = { estimado: 0, real: 0 }; });
-      setGastos(g);
-    }
-  }, [isDemoMode]);
-
   // Cargar proyectos guardados al iniciar
   useEffect(() => {
-    if (!isDemoMode) loadProyectosGuardados();
+    loadProyectosGuardados();
   }, []);
 
   // Calcular resultados automáticamente cuando cambian los valores

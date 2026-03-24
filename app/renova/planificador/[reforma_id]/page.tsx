@@ -5,10 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase, PartidaReformaDetallada, Reforma } from '@/lib/supabase';
 import { ArrowLeft, Plus, ChevronDown, ChevronUp, Clock, PlayCircle, Check } from 'lucide-react';
 import ItemsTable from '@/components/ItemsTable';
-import { useDemo, demoData } from '@/contexts/DemoContext';
 
 export default function PlanificadorReformaPage() {
-  const { isDemoMode } = useDemo();
   const params = useParams();
   const router = useRouter();
   const reformaId = params.reforma_id as string;
@@ -25,17 +23,11 @@ export default function PlanificadorReformaPage() {
   });
 
   useEffect(() => {
-    if (isDemoMode) {
-      setReforma(demoData.reformas[0] as any);
-      setPartidas(demoData.partidas as PartidaReformaDetallada[]);
-      setLoading(false);
-      return;
-    }
     if (reformaId) {
       loadReforma();
       loadPartidas();
     }
-  }, [reformaId, isDemoMode]);
+  }, [reformaId]);
 
   const loadReforma = async () => {
     const { data, error } = await supabase

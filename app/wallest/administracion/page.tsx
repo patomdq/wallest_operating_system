@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Plus, Trash2, Edit2, Filter, TrendingUp, Wallet, ArrowUpCircle, ArrowDownCircle, Scale } from 'lucide-react';
-import { useDemo, demoData } from '@/contexts/DemoContext';
 
 type MovimientoEmpresa = {
   id: string;
@@ -66,7 +65,6 @@ const CUENTAS = [
 ];
 
 export default function AdministracionPage() {
-  const { isDemoMode } = useDemo();
   const [movimientos, setMovimientos] = useState<MovimientoEmpresa[]>([]);
   const [proyectos, setProyectos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,7 +99,7 @@ export default function AdministracionPage() {
 
   useEffect(() => {
     loadData();
-  }, [isDemoMode]);
+  }, []);
 
   useEffect(() => {
     calcularKPIs();
@@ -110,14 +108,6 @@ export default function AdministracionPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-
-      // Demo mode: usar datos ficticios
-      if (isDemoMode) {
-        setMovimientos(demoData.movimientos as any);
-        setProyectos(demoData.proyectos);
-        setLoading(false);
-        return;
-      }
 
       // Cargar movimientos
       console.log('Cargando movimientos desde movimientos_empresa...');
@@ -225,11 +215,6 @@ export default function AdministracionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (isDemoMode) {
-      resetForm();
-      return;
-    }
 
     const dataToSave = {
       fecha: formData.fecha,

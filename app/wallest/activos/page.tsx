@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import { useDemo, demoData } from '@/contexts/DemoContext';
 
 type Inmueble = {
   id: string;
@@ -27,7 +26,6 @@ type Inmueble = {
 };
 
 export default function ActivosInmobiliarios() {
-  const { isDemoMode } = useDemo();
   const [inmuebles, setInmuebles] = useState<Inmueble[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -85,13 +83,9 @@ const estadoBadge = (estado: Inmueble['estado']) =>
 
   useEffect(() => {
     recargar();
-  }, [isDemoMode]);
+  }, []);
 
   const recargar = async () => {
-    if (isDemoMode) {
-      setInmuebles(demoData.inmuebles as Inmueble[]);
-      return;
-    }
     const { data, error } = await supabase
       .from('inmuebles')
       .select('*')

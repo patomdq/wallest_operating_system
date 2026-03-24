@@ -4,25 +4,18 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { FileText, ArrowRight } from 'lucide-react';
-import { useDemo, demoData } from '@/contexts/DemoContext';
 
 export default function PlanificadorIndexPage() {
-  const { isDemoMode } = useDemo();
   const router = useRouter();
   const [reformas, setReformas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadReformas();
-  }, [isDemoMode]);
+  }, []);
 
   const loadReformas = async () => {
     setLoading(true);
-    if (isDemoMode) {
-      setReformas(demoData.reformas);
-      setLoading(false);
-      return;
-    }
     const { data, error } = await supabase
       .from('reformas')
       .select('*, inmuebles(nombre)')

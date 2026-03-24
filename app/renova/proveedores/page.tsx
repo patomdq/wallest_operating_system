@@ -3,10 +3,8 @@
 import { useEffect, useState } from 'react';
 import { supabase, Proveedor } from '@/lib/supabase';
 import { Plus, Trash2, Filter } from 'lucide-react';
-import { useDemo, demoData } from '@/contexts/DemoContext';
 
 export default function ProveedoresPage() {
-  const { isDemoMode } = useDemo();
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'activo' | 'pasivo'>('todos');
@@ -22,13 +20,9 @@ export default function ProveedoresPage() {
 
   useEffect(() => {
     loadProveedores();
-  }, [isDemoMode]);
+  }, []);
 
   const loadProveedores = async () => {
-    if (isDemoMode) {
-      setProveedores(demoData.proveedores as Proveedor[]);
-      return;
-    }
     const { data } = await supabase
       .from('proveedores')
       .select('*')

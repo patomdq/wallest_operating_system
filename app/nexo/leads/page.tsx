@@ -3,12 +3,10 @@
 import { useEffect, useState } from 'react';
 import { supabase, Lead } from '@/lib/supabase';
 import { Plus, Trash2, Edit2, X } from 'lucide-react';
-import { useDemo, demoData } from '@/contexts/DemoContext';
 
 const ESTADOS = ['nuevo', 'contactado', 'oferta', 'cerrado'];
 
 export default function LeadsPage() {
-  const { isDemoMode } = useDemo();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -22,13 +20,9 @@ export default function LeadsPage() {
 
   useEffect(() => {
     loadLeads();
-  }, [isDemoMode]);
+  }, []);
 
   const loadLeads = async () => {
-    if (isDemoMode) {
-      setLeads(demoData.leads as Lead[]);
-      return;
-    }
     const { data } = await supabase
       .from('leads')
       .select('*')

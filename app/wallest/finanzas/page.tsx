@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { TrendingUp, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { useDemo, demoData } from '@/contexts/DemoContext';
 
 type ProyectoConsolidado = {
   id: string;
@@ -24,7 +23,6 @@ type ProyectoConsolidado = {
 };
 
 export default function FinanzasConsolidadas() {
-  const { isDemoMode } = useDemo();
   const [proyectos, setProyectos] = useState<ProyectoConsolidado[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -41,24 +39,12 @@ export default function FinanzasConsolidadas() {
 
   useEffect(() => {
     loadProyectosConsolidados();
-  }, [isDemoMode]);
+  }, []);
 
   const loadProyectosConsolidados = async () => {
     try {
       setLoading(true);
 
-      if (isDemoMode) {
-        const d = demoData.finanzas as any[];
-        setProyectos(d);
-        setInversionTotal(d.reduce((s, p) => s + p.precio_compra, 0));
-        setGastosTotal(d.reduce((s, p) => s + p.gastos_reales, 0));
-        setIngresosTotal(0);
-        setBeneficioTotal(85000);
-        setRoiPromedioGlobal(34.7);
-        setLoading(false);
-        return;
-      }
-      
       // Obtener todas las reformas con información del inmueble
       const { data: reformas, error: reformasError } = await supabase
         .from('reformas')
