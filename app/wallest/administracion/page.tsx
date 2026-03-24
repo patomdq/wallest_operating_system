@@ -58,6 +58,7 @@ const CUENTAS = [
   'Banco Sabadell',
   'BBVA',
   'CaixaBank',
+  'CaixaBank JV Nexo',
   'CaixaBank JV Zurgena 1',
   'Santander',
   'Caja',
