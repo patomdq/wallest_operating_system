@@ -226,6 +226,11 @@ export default function AdministracionPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (isDemoMode) {
+      resetForm();
+      return;
+    }
+
     const dataToSave = {
       fecha: formData.fecha,
       tipo: formData.tipo,
@@ -282,13 +287,13 @@ export default function AdministracionPage() {
         // Sincronizar con finanzas_proyecto
         if (movimientoAnterior?.proyecto_id && formData.proyecto_id) {
           // Caso 1: Tenía proyecto y sigue teniendo proyecto (pueden ser el mismo o diferente)
-          // Buscar y actualizar/eliminar el registro en finanzas_proyecto
-          const { data: registroFinanzas } = await supabase
+          const { data: rows1 } = await supabase
             .from('finanzas_proyecto')
             .select('id')
             .eq('reforma_id', movimientoAnterior.proyecto_id)
             .eq('descripcion', movimientoAnterior.concepto)
-            .single();
+            .limit(1);
+          const registroFinanzas = rows1?.[0] ?? null;
 
           if (registroFinanzas) {
             if (movimientoAnterior.proyecto_id === formData.proyecto_id) {
@@ -303,7 +308,7 @@ export default function AdministracionPage() {
                 .from('finanzas_proyecto')
                 .delete()
                 .eq('id', registroFinanzas.id);
-              
+
               await supabase
                 .from('finanzas_proyecto')
                 .insert([financiasData]);
@@ -311,12 +316,13 @@ export default function AdministracionPage() {
           }
         } else if (movimientoAnterior?.proyecto_id && !formData.proyecto_id) {
           // Caso 2: Tenía proyecto pero ya no - eliminar de finanzas_proyecto
-          const { data: registroFinanzas } = await supabase
+          const { data: rows2 } = await supabase
             .from('finanzas_proyecto')
             .select('id')
             .eq('reforma_id', movimientoAnterior.proyecto_id)
             .eq('descripcion', movimientoAnterior.concepto)
-            .single();
+            .limit(1);
+          const registroFinanzas = rows2?.[0] ?? null;
 
           if (registroFinanzas) {
             await supabase
