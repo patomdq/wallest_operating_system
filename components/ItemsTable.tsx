@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, ItemPartidaReforma } from '@/lib/supabase';
 import { Plus, Trash2, Save, X } from 'lucide-react';
+import { useDemo, demoData } from '@/contexts/DemoContext';
 
 interface ItemsTableProps {
   partidaReformaId: string;
@@ -31,6 +32,7 @@ const ESTANCIAS = [
 ];
 
 export default function ItemsTable({ partidaReformaId }: ItemsTableProps) {
+  const { isDemoMode } = useDemo();
   const [items, setItems] = useState<ItemPartidaReforma[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -49,10 +51,18 @@ export default function ItemsTable({ partidaReformaId }: ItemsTableProps) {
 
   useEffect(() => {
     loadItems();
-  }, [partidaReformaId]);
+  }, [partidaReformaId, isDemoMode]);
 
   const loadItems = async () => {
     setLoading(true);
+    if (isDemoMode) {
+      const demoItems = demoData.items.filter(
+        (item) => item.partida_reforma_id === partidaReformaId
+      ) as ItemPartidaReforma[];
+      setItems(demoItems);
+      setLoading(false);
+      return;
+    }
     const { data, error } = await supabase
       .from('items_partida_reforma')
       .select('*')
