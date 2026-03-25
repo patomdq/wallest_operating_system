@@ -77,6 +77,9 @@ export default function AdministracionPage() {
   const [ingresosMes, setIngresosMes] = useState(0);
   const [balanceMes, setBalanceMes] = useState(0);
   const [saldosPorCuenta, setSaldosPorCuenta] = useState<Record<string, number>>({});
+  const [totalIngresos, setTotalIngresos] = useState(0);
+  const [totalGastos, setTotalGastos] = useState(0);
+  const [saldoTotal, setSaldoTotal] = useState(0);
 
   // Filtros
   const [filtroProyecto, setFiltroProyecto] = useState('');
@@ -103,7 +106,7 @@ export default function AdministracionPage() {
 
   useEffect(() => {
     calcularKPIs();
-  }, [movimientos, filtroCuenta]);
+  }, [movimientos, filtroCuenta, filtroProyecto]);
 
   const loadData = async () => {
     try {
@@ -161,21 +164,35 @@ export default function AdministracionPage() {
   const CUENTA_PRINCIPAL = 'CaixaBank';
 
   const calcularKPIs = () => {
-    // Filtrar por cuenta si hay filtro activo
-    // Sin filtro: saldo actual = solo cuenta principal (CaixaBank)
-    const movsFiltrados = filtroCuenta
-      ? movimientos.filter(m => m.cuenta === filtroCuenta)
-      : movimientos;
+    // Filtrar por proyecto y cuenta si hay filtros activos
+    const movsFiltrados = movimientos.filter(m => {
+      if (filtroProyecto && m.proyecto_id !== filtroProyecto) return false;
+      if (filtroCuenta && m.cuenta !== filtroCuenta) return false;
+      return true;
+    });
 
-    // Para saldo actual: si no hay filtro usamos solo la cuenta principal
-    const movsParaSaldo = filtroCuenta
-      ? movimientos.filter(m => m.cuenta === filtroCuenta)
-      : movimientos.filter(m => m.cuenta === CUENTA_PRINCIPAL);
+    // Para saldo actual: si no hay filtro de cuenta usamos solo la cuenta principal
+    const movsParaSaldo = movimientos.filter(m => {
+      if (filtroProyecto && m.proyecto_id !== filtroProyecto) return false;
+      if (filtroCuenta) return m.cuenta === filtroCuenta;
+      return m.cuenta === CUENTA_PRINCIPAL;
+    });
 
-    // Saldo actual
-    // montos negativos para gastos ya vienen desde la BD
-    const saldoCalculado = movsParaSaldo.reduce((sum, m) => sum + m.monto, 0);
+    // Saldo actual — tipo-aware: los gastos pueden venir positivos o negativos en BD
+    const saldoCalculado = movsParaSaldo.reduce((sum, m) =>
+      sum + (m.tipo === 'Ingreso' ? Math.abs(m.monto) : -Math.abs(m.monto)), 0);
     setSaldoActual(saldoCalculado);
+
+    // Totales acumulados (all-time) con tipo-aware math
+    const calculatedTotalIngresos = movsFiltrados
+      .filter(m => m.tipo === 'Ingreso')
+      .reduce((sum, m) => sum + Math.abs(m.monto), 0);
+    const calculatedTotalGastos = movsFiltrados
+      .filter(m => m.tipo === 'Gasto')
+      .reduce((sum, m) => sum + Math.abs(m.monto), 0);
+    setTotalIngresos(calculatedTotalIngresos);
+    setTotalGastos(calculatedTotalGastos);
+    setSaldoTotal(calculatedTotalIngresos - calculatedTotalGastos);
 
     // Gastos e ingresos del mes actual
     const now = new Date();
@@ -187,28 +204,27 @@ export default function AdministracionPage() {
         const fecha = new Date(m.fecha);
         return m.tipo === 'Gasto' && fecha.getMonth() === mesActual && fecha.getFullYear() === añoActual;
       })
-      .reduce((sum, m) => sum + m.monto, 0);
+      .reduce((sum, m) => sum + Math.abs(m.monto), 0);
 
     const ingresosMesActual = movsFiltrados
       .filter(m => {
         const fecha = new Date(m.fecha);
         return m.tipo === 'Ingreso' && fecha.getMonth() === mesActual && fecha.getFullYear() === añoActual;
       })
-      .reduce((sum, m) => sum + m.monto, 0);
+      .reduce((sum, m) => sum + Math.abs(m.monto), 0);
     console.log('📊 Balance del mes:', ingresosMesActual - gastosMesActual, '€');
 
     setGastosMes(gastosMesActual);
     setIngresosMes(ingresosMesActual);
     setBalanceMes(ingresosMesActual - gastosMesActual);
 
-    // Calcular saldos por cuenta (siempre del total, no filtrado)
+    // Calcular saldos por cuenta — tipo-aware, respetando filtro de proyecto
     const saldosCuenta: Record<string, number> = {};
-    movimientos.forEach(m => {
+    movimientos.filter(m => !filtroProyecto || m.proyecto_id === filtroProyecto).forEach(m => {
       if (!saldosCuenta[m.cuenta]) {
         saldosCuenta[m.cuenta] = 0;
       }
-      // montos de gastos ya vienen negativos desde la BD
-      saldosCuenta[m.cuenta] += m.monto;
+      saldosCuenta[m.cuenta] += m.tipo === 'Ingreso' ? Math.abs(m.monto) : -Math.abs(m.monto);
     });
     setSaldosPorCuenta(saldosCuenta);
   };
@@ -482,6 +498,40 @@ export default function AdministracionPage() {
           <Plus size={20} />
           Nuevo Movimiento
         </button>
+      </div>
+
+      {/* KPIs — Resumen ingresos / gastos / saldo */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="bg-wos-card border border-wos-border rounded-lg p-6">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-wos-text-muted">Total Ingresos</p>
+            <ArrowUpCircle className="text-green-500 flex-shrink-0" size={20} />
+          </div>
+          <p className="text-4xl font-bold text-green-500">
+            +{totalIngresos.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+          </p>
+          <p className="text-xs text-wos-text-muted mt-2">Acumulado total</p>
+        </div>
+        <div className="bg-wos-card border border-wos-border rounded-lg p-6">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-wos-text-muted">Total Gastos</p>
+            <ArrowDownCircle className="text-red-500 flex-shrink-0" size={20} />
+          </div>
+          <p className="text-4xl font-bold text-red-500">
+            -{totalGastos.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+          </p>
+          <p className="text-xs text-wos-text-muted mt-2">Acumulado total</p>
+        </div>
+        <div className="bg-wos-card border border-wos-border rounded-lg p-6">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-wos-text-muted">Saldo Disponible</p>
+            <Scale className={`flex-shrink-0 ${saldoTotal >= 0 ? 'text-green-500' : 'text-red-500'}`} size={20} />
+          </div>
+          <p className={`text-4xl font-bold ${saldoTotal >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            {saldoTotal >= 0 ? '+' : ''}{saldoTotal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+          </p>
+          <p className="text-xs text-wos-text-muted mt-2">Ingresos − Gastos</p>
+        </div>
       </div>
 
       {/* KPIs — una card por cuenta bancaria, dinámicas */}
