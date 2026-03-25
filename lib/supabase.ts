@@ -3,7 +3,83 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// ── Demo data filter ──────────────────────────────────────────────────────────
+// The demo user (demo@wallest.pro) can see is_demo=true rows.
+// Every other authenticated user must NEVER see them.
+const DEMO_USER_UID = '0f3bf3de-b7c2-4294-a93f-56d1338573df';
+
+const DEMO_FILTERED_TABLES = new Set([
+  'inmuebles',
+  'reformas',
+  'movimientos_empresa',
+  'administracion',
+  'partidas_reforma_detalladas',
+  'planificacion_reforma',
+  'finanzas_proyecto',
+  'proyectos_rentabilidad',
+  'simulaciones_rentabilidad',
+  'leads',
+  'comercializacion',
+  'hitos_inversor',
+  'bitacora_inversor',
+]);
+
+// Cached synchronously so it's available inside query chains without awaiting.
+let _currentUserId: string | null = null;
+
+const _base = createClient(supabaseUrl, supabaseAnonKey);
+
+// Prime the cache as soon as possible.
+_base.auth.getSession().then(({ data }) => {
+  _currentUserId = data.session?.user?.id ?? null;
+});
+
+// Keep the cache current on login / logout / token refresh.
+_base.auth.onAuthStateChange((_event, session) => {
+  _currentUserId = session?.user?.id ?? null;
+});
+
+function _isDemoUser(): boolean {
+  return _currentUserId === DEMO_USER_UID;
+}
+
+/**
+ * Supabase client with automatic is_demo=false filter.
+ *
+ * For every SELECT on a DEMO_FILTERED_TABLE the proxy automatically appends
+ * .eq('is_demo', false) unless the current user is demo@wallest.pro.
+ * No individual query needs to be touched.
+ */
+export const supabase = new Proxy(_base, {
+  get(target, prop, receiver) {
+    if (prop === 'from') {
+      return (table: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const qb = (target as any).from(table);
+
+        // Only wrap tables that carry demo data, and only for non-demo users.
+        if (!DEMO_FILTERED_TABLES.has(table) || _isDemoUser()) {
+          return qb;
+        }
+
+        // Proxy the query builder so that any .select() call gets the filter.
+        return new Proxy(qb, {
+          get(qTarget, qProp, qReceiver) {
+            if (qProp === 'select') {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              return (...args: unknown[]) =>
+                (qTarget as any).select(...args).eq('is_demo', false);
+            }
+            const val = Reflect.get(qTarget, qProp, qReceiver);
+            return typeof val === 'function' ? val.bind(qTarget) : val;
+          },
+        });
+      };
+    }
+
+    return Reflect.get(target, prop, receiver);
+  },
+}) as typeof _base;
 
 // Tipos de datos
 export type Inmueble = {
