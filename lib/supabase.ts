@@ -57,18 +57,21 @@ export const supabase = new Proxy(_base, {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const qb = (target as any).from(table);
 
-        // Only wrap tables that carry demo data, and only for non-demo users.
-        if (!DEMO_FILTERED_TABLES.has(table) || _isDemoUser()) {
+        // Only wrap tables that carry demo data.
+        if (!DEMO_FILTERED_TABLES.has(table)) {
           return qb;
         }
 
         // Proxy the query builder so that any .select() call gets the filter.
+        // Demo user sees only is_demo=true rows; everyone else sees only is_demo=false rows.
         return new Proxy(qb, {
           get(qTarget, qProp, qReceiver) {
             if (qProp === 'select') {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               return (...args: unknown[]) =>
-                (qTarget as any).select(...args).not('is_demo', 'is', true);
+                _isDemoUser()
+                  ? (qTarget as any).select(...args).eq('is_demo', true)
+                  : (qTarget as any).select(...args).eq('is_demo', false);
             }
             const val = Reflect.get(qTarget, qProp, qReceiver);
             return typeof val === 'function' ? val.bind(qTarget) : val;
