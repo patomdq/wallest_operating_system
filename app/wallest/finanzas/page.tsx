@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, sessionReady } from '@/lib/supabase';
 import { TrendingUp, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -38,7 +38,7 @@ export default function FinanzasConsolidadas() {
   const [tiposOperacion, setTiposOperacion] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    loadProyectosConsolidados();
+    sessionReady.then(() => loadProyectosConsolidados());
   }, []);
 
   const loadProyectosConsolidados = async () => {

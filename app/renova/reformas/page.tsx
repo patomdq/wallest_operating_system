@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase, Reforma } from '@/lib/supabase';
+import { supabase, sessionReady, Reforma } from '@/lib/supabase';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -42,7 +42,7 @@ export default function ReformasPage() {
   };
 
   useEffect(() => {
-    loadData();
+    sessionReady.then(() => loadData());
   }, []);
 
   const loadData = async () => {

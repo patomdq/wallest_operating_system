@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, sessionReady } from '@/lib/supabase';
 import { Plus, Trash2, Edit2, Filter, TrendingUp, Wallet, ArrowUpCircle, ArrowDownCircle, Scale } from 'lucide-react';
 
 type MovimientoEmpresa = {
@@ -101,7 +101,7 @@ export default function AdministracionPage() {
   });
 
   useEffect(() => {
-    loadData();
+    sessionReady.then(() => loadData());
   }, []);
 
   useEffect(() => {

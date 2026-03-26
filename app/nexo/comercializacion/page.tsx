@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase, Comercializacion } from '@/lib/supabase';
+import { supabase, sessionReady, Comercializacion } from '@/lib/supabase';
 import { Plus, Trash2, Globe, TrendingDown, DollarSign } from 'lucide-react';
 
 export default function ComercializacionPage() {
@@ -21,7 +21,7 @@ export default function ComercializacionPage() {
   });
 
   useEffect(() => {
-    loadData();
+    sessionReady.then(() => loadData());
   }, []);
 
   const loadData = async () => {

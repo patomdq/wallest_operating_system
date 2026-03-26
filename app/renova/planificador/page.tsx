@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, sessionReady } from '@/lib/supabase';
 import { FileText, ArrowRight } from 'lucide-react';
 
 export default function PlanificadorIndexPage() {
@@ -11,7 +11,7 @@ export default function PlanificadorIndexPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadReformas();
+    sessionReady.then(() => loadReformas());
   }, []);
 
   const loadReformas = async () => {

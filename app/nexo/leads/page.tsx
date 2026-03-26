@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase, Lead } from '@/lib/supabase';
+import { supabase, sessionReady, Lead } from '@/lib/supabase';
 import { Plus, Trash2, Edit2, X } from 'lucide-react';
 
 const ESTADOS = ['nuevo', 'contactado', 'oferta', 'cerrado'];
@@ -19,7 +19,7 @@ export default function LeadsPage() {
   });
 
   useEffect(() => {
-    loadLeads();
+    sessionReady.then(() => loadLeads());
   }, []);
 
   const loadLeads = async () => {

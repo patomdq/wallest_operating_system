@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, ProyectoRentabilidad } from '@/lib/supabase';
+import { supabase, sessionReady, ProyectoRentabilidad } from '@/lib/supabase';
 import { Calculator, Save, Printer, Star, Edit2, Trash2 } from 'lucide-react';
 import { useDemo, demoData } from '@/contexts/DemoContext';
 
@@ -78,7 +78,7 @@ export default function CalculadoraRentabilidad() {
 
   // Cargar proyectos guardados al iniciar
   useEffect(() => {
-    loadProyectosGuardados();
+    sessionReady.then(() => loadProyectosGuardados());
   }, []);
 
   // Calcular resultados automáticamente cuando cambian los valores
