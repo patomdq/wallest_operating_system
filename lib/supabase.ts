@@ -22,6 +22,7 @@ const DEMO_FILTERED_TABLES = new Set([
   'comercializacion',
   'hitos_inversor',
   'bitacora_inversor',
+  'items_partida_reforma',
 ]);
 
 let _currentUserId: string | null = null;
