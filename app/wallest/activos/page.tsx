@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, sessionReady } from '@/lib/supabase';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 
 type Inmueble = {
@@ -82,7 +82,7 @@ const estadoBadge = (estado: Inmueble['estado']) =>
     typeof n === 'number' ? `€${n.toLocaleString()}` : '-';
 
   useEffect(() => {
-    recargar();
+    sessionReady.then(() => recargar());
   }, []);
 
   const recargar = async () => {
