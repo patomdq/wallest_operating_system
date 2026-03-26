@@ -27,12 +27,22 @@ const DEMO_FILTERED_TABLES = new Set([
 // Cached synchronously so it's available inside query chains without awaiting.
 let _currentUserId: string | null = null;
 
-const _base = createClient(supabaseUrl, supabaseAnonKey);
+// Read session synchronously from localStorage before any component mounts.
+// This avoids the race condition where queries run before getSession() resolves.
+// Supabase v2 stores the session under: sb-{project-ref}-auth-token
+if (typeof window !== 'undefined') {
+  try {
+    const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
+    const raw = localStorage.getItem(`sb-${projectRef}-auth-token`);
+    if (raw) {
+      _currentUserId = JSON.parse(raw)?.user?.id ?? null;
+    }
+  } catch {
+    // localStorage unavailable or malformed — will be set by getSession() below
+  }
+}
 
-// Prime the cache as soon as possible.
-_base.auth.getSession().then(({ data }) => {
-  _currentUserId = data.session?.user?.id ?? null;
-});
+const _base = createClient(supabaseUrl, supabaseAnonKey);
 
 // Keep the cache current on login / logout / token refresh.
 _base.auth.onAuthStateChange((_event, session) => {
