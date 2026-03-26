@@ -68,7 +68,7 @@ export const supabase = new Proxy(_base, {
             if (qProp === 'select') {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               return (...args: unknown[]) =>
-                (qTarget as any).select(...args).eq('is_demo', false);
+                (qTarget as any).select(...args).not('is_demo', 'is', true);
             }
             const val = Reflect.get(qTarget, qProp, qReceiver);
             return typeof val === 'function' ? val.bind(qTarget) : val;
