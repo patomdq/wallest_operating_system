@@ -396,20 +396,23 @@ export default function InversorPortal() {
   const loadInversorData = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('loadInversorData start', session?.user?.id);
       if (!session) { router.push('/inversores/login'); return; }
 
       const { data: inversorData, error: invError } = await supabase
         .from('inversores').select('id, nombre, desde')
         .eq('user_id', session.user.id).single();
+      console.log('inversor result', inversorData, invError);
       if (invError || !inversorData) { router.push('/inversores/login'); return; }
 
-      const { data: operacionesData } = await supabase
+      const { data: operacionesData, error: opError } = await supabase
         .from('inversor_operaciones')
         .select(`id, inmueble_id, capital_invertido, capital_total_operacion, costes_totales, participacion,
           valor_estimado_venta, retorno_estimado, retorno_propio, roi,
           duracion_meses, fecha_entrada, fecha_salida_estimada, avance,
           inmuebles ( nombre, estado )`)
         .eq('inversor_id', inversorData.id);
+      console.log('operaciones result', operacionesData, opError);
 
       const operacionesConDatos: Operacion[] = [];
       for (const op of operacionesData || []) {
