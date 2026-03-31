@@ -17,6 +17,7 @@ type Operacion = {
   tipo: string;
   capital_invertido: number;
   capital_total_operacion: number;
+  costes_totales: number;
   participacion: number;
   valor_estimado_venta: number;
   retorno_estimado: number;
@@ -224,30 +225,31 @@ function OperacionCard({ op, expanded, onToggle }: { op: Operacion; expanded: bo
             Escenarios proyectados · Calculado sobre costo estimado al inicio de la operación
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            {console.log('op data:', op.valor_estimado_venta, op.costes_totales)}
             {[
               {
                 label: 'Escenario Conservador',
-                precioVenta: 90000,
+                precioVenta: op.valor_estimado_venta * 0.85,
                 color: '#ef4444',
                 borderColor: '#ef444430',
                 bgColor: '#1a0a0a',
               },
               {
                 label: 'Escenario Realista',
-                precioVenta: 100000,
+                precioVenta: op.valor_estimado_venta,
                 color: '#c9a84c',
                 borderColor: '#c9a84c30',
                 bgColor: '#111008',
               },
               {
                 label: 'Escenario Optimista',
-                precioVenta: 110000,
+                precioVenta: op.valor_estimado_venta * 1.15,
                 color: '#4ade80',
                 borderColor: '#4ade8030',
                 bgColor: '#0a1a0e',
               },
             ].map((esc) => {
-              const costoOperacion = op.capital_total_operacion;
+              const costoOperacion = op.costes_totales || op.capital_total_operacion;
               const beneficioBruto = esc.precioVenta - costoOperacion;
               const tuBeneficio = beneficioBruto * (op.participacion / 100);
               const rentabilidad = op.capital_invertido > 0 ? (tuBeneficio / op.capital_invertido) * 100 : 0;
@@ -403,7 +405,7 @@ export default function InversorPortal() {
 
       const { data: operacionesData } = await supabase
         .from('inversor_operaciones')
-        .select(`id, inmueble_id, capital_invertido, capital_total_operacion, participacion,
+        .select(`id, inmueble_id, capital_invertido, capital_total_operacion, costes_totales, participacion,
           valor_estimado_venta, retorno_estimado, retorno_propio, roi,
           duracion_meses, fecha_entrada, fecha_salida_estimada, avance,
           inmuebles ( nombre, estado )`)
@@ -413,6 +415,7 @@ export default function InversorPortal() {
       for (const op of operacionesData || []) {
         // Buscar el proyecto en reformas usando el nombre del inmueble
         const inmuebleNombre = (op.inmuebles as any)?.nombre || '';
+        if (!inmuebleNombre) continue;
         const { data: reformaData } = await supabase
           .from('reformas')
           .select('id')
@@ -452,6 +455,7 @@ export default function InversorPortal() {
           tipo: 'JV',
           capital_invertido: op.capital_invertido,
           capital_total_operacion: op.capital_total_operacion || 0,
+          costes_totales: op.costes_totales || 0,
           participacion: op.participacion,
           valor_estimado_venta: op.valor_estimado_venta,
           retorno_estimado: op.retorno_estimado,
